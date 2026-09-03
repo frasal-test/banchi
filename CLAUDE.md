@@ -102,7 +102,13 @@ SPARQL a ogni chiamata, da rivedere quando serve una home page che legge più
 atti insieme.
 
 Primo mockup di `pubblicazione` (2026-09-03): `web/`, generato con Claude
-Design e deployato su Vercel (vedi sopra). Dati statici (JSON), non ancora
-collegato a `src/banchi/`. Serve solo a validare la direzione del design;
-quando la pipeline avrà un output servibile, `web/` va ricollegato a dati
-veri o rifatto.
+Design e deployato su Vercel (vedi sopra).
+
+`web/` collegato ai dati veri per tutto il catalogo (2026-09-03):
+`scripts/genera_dati_web.py` chiama la pipeline (`src/banchi/sources/atto.py`)
+per ogni atto di `web/data/catalogo_atti.json` e scrive
+`web/data/atto_<numero>_sviluppo.json`; il frontend fa fetch generico per
+numero atto, non più cablato su un solo caso. Restano comunque dati statici
+committati (nessun backend): da rigenerare a mano rieseguendo lo script
+quando il catalogo o `src/banchi/sources/` cambiano. Vedi
+[docs/decisioni.md](docs/decisioni.md), 2026-09-03.

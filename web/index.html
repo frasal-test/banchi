@@ -54,6 +54,7 @@ html, body { min-height: 100%; }
 <main style="max-width:1200px;margin:0 auto;padding:var(--space-8) var(--space-6) 100px;">
   <h1>Indice dei provvedimenti</h1>
   <p class="text-muted" style="max-width:640px;font-size:14px;">Atti della XIX legislatura con dibattito d'Aula alla Camera. Seleziona un provvedimento per lo sviluppo cronologico completo di tutte le sedute.</p>
+  <p class="text-muted" style="font-size:13px;">{{ sviluppoDisponibileLabel }}</p>
 
   <div style="display:flex;gap:var(--space-3);align-items:center;margin:var(--space-6) 0 var(--space-4);flex-wrap:wrap;">
     <div style="position:relative;flex:1;min-width:240px;">
@@ -79,6 +80,7 @@ html, body { min-height: 100%; }
           <span style="font-family:var(--font-heading);font-weight:800;font-size:15px;white-space:nowrap;flex:none;">C. {{ a.numero_camera }}</span>
           <sc-if value="{{ a.hasSenato }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;opacity:.6;white-space:nowrap;flex:none;">Senato {{ a.alias_senato }}</span></sc-if>
           <span class="tag tag-outline" style="white-space:nowrap;flex:none;">{{ a.naturaShort }}</span>
+          <sc-if value="{{ a.noSviluppo }}" hint-placeholder-val="{{ false }}"><span class="tag tag-outline" style="white-space:nowrap;flex:none;opacity:.6;">dati non disponibili</span></sc-if>
         </div>
         <div style="font-size:14px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ a.titoloShort }}</div>
         <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:center;font-size:12px;opacity:.8;margin-top:2px;">
@@ -195,9 +197,15 @@ html, body { min-height: 100%; }
     </sc-for>
   </sc-if>
 
+  <sc-if value="{{ isLoadingSviluppo }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:var(--space-6);border:1px solid var(--color-divider);text-align:center;opacity:.7;font-size:14px;">
+      Caricamento dello sviluppo cronologico…
+    </div>
+  </sc-if>
+
   <sc-if value="{{ noSviluppo }}" hint-placeholder-val="{{ false }}">
     <div style="padding:var(--space-6);border:1px solid var(--color-divider);text-align:center;opacity:.7;font-size:14px;">
-      Dati di sviluppo completo non ancora generati per questo atto in questo mockup — disponibile per l'atto C. 2397 (esequie e cerimonia d'inizio pontificato).
+      Dati di sviluppo completo non ancora generati per questo atto.
     </div>
   </sc-if>
 
@@ -233,6 +241,7 @@ class Component extends DCLogic {
     selectedNumero: null,
     atti: undefined,
     sviluppoByNumero: {},
+    sviluppoStatus: {},
     searchQuery: '',
     sortBy: 'interventi_desc',
     textFilter: '',
@@ -280,10 +289,15 @@ class Component extends DCLogic {
 
   selectAtto = (numero) => {
     this.setState({ view: 'atto', selectedNumero: numero, textFilter: '', hidePresidenza: this.props.hidePresidenzaDefault ?? false });
-    if (numero === '2397' && !this.state.sviluppoByNumero['2397']) {
-      fetch('data/atto_2397_sviluppo.json').then(r => r.json()).then(data => {
-        this.setState({ sviluppoByNumero: { ...this.state.sviluppoByNumero, '2397': data } });
-      });
+    if (!this.state.sviluppoByNumero[numero] && this.state.sviluppoStatus[numero] !== 'loading') {
+      this.setState({ sviluppoStatus: { ...this.state.sviluppoStatus, [numero]: 'loading' } });
+      fetch(`data/atto_${numero}_sviluppo.json`)
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(data => this.setState({
+          sviluppoByNumero: { ...this.state.sviluppoByNumero, [numero]: data },
+          sviluppoStatus: { ...this.state.sviluppoStatus, [numero]: 'ready' }
+        }))
+        .catch(() => this.setState({ sviluppoStatus: { ...this.state.sviluppoStatus, [numero]: 'missing' } }));
     }
   };
   backToHome = () => this.setState({ view: 'home' });
@@ -330,8 +344,16 @@ class Component extends DCLogic {
       discussioni: a.discussioni,
       interventi_aula: a.interventi_aula,
       volumeWidthPct: Math.max(4, Math.round((a.interventi_aula / maxInterventi) * 100)),
+      noSviluppo: !a.sviluppo_disponibile,
       onSelect: () => this.selectAtto(a.numero_camera)
     }));
+
+    const sviluppoDisponibileCount = atti.filter(a => a.sviluppo_disponibile).length;
+    const sviluppoDisponibileLabel = atti.length
+      ? (sviluppoDisponibileCount === atti.length
+        ? `Sviluppo cronologico completo disponibile per tutti e ${atti.length} gli atti.`
+        : `Sviluppo cronologico completo disponibile per ${sviluppoDisponibileCount} atti su ${atti.length}.`)
+      : '';
 
     const selectedCatalog = atti.find(a => a.numero_camera === this.state.selectedNumero);
     const selectedAtto = selectedCatalog ? {
@@ -348,8 +370,10 @@ class Component extends DCLogic {
     } : { numero_camera: '', alias_senato: '', hasSenato: false, titoloShort: '', naturaShort: '', iniziativa: '', periodoLabel: '', discussioni: 0, interventi_aula: 0, uri: '#' };
 
     const sviluppo = this.state.sviluppoByNumero[this.state.selectedNumero];
+    const sviluppoStatus = this.state.sviluppoStatus[this.state.selectedNumero];
     const hasSviluppo = this.state.view === 'atto' && !!sviluppo;
-    const noSviluppo = this.state.view === 'atto' && !!selectedCatalog && !sviluppo && this.state.selectedNumero !== '2397';
+    const isLoadingSviluppo = this.state.view === 'atto' && !!selectedCatalog && !sviluppo && sviluppoStatus === 'loading';
+    const noSviluppo = this.state.view === 'atto' && !!selectedCatalog && !sviluppo && sviluppoStatus === 'missing';
 
     let groupStats = [], seduteChips = [], sedute = [];
     if (hasSviluppo) {
@@ -431,8 +455,9 @@ class Component extends DCLogic {
       resultsCount: filteredAtti.length,
       noResults: filteredAtti.length === 0 && (this.state.atti !== undefined),
       filteredAtti,
+      sviluppoDisponibileLabel,
       selectedAtto,
-      hasSviluppo, noSviluppo,
+      hasSviluppo, isLoadingSviluppo, noSviluppo,
       groupStats, seduteChips, sedute,
       textFilter: this.state.textFilter,
       onTextFilterChange: this.onTextFilterChange,

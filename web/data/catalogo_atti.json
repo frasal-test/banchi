@@ -9,7 +9,8 @@
     "discussioni": 21,
     "dal": "20221213",
     "al": "20221228",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_705"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_705",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "1665",
@@ -21,7 +22,8 @@
     "discussioni": 24,
     "dal": "20240409",
     "al": "20240618",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1665"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1665",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "1660",
@@ -33,7 +35,8 @@
     "discussioni": 18,
     "dal": "20240614",
     "al": "20240918",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1660"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1660",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "643-bis",
@@ -45,7 +48,8 @@
     "discussioni": 15,
     "dal": "20221201",
     "al": "20221223",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_643-bis"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_643-bis",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "2355",
@@ -57,7 +61,8 @@
     "discussioni": 13,
     "dal": "20250414",
     "al": "20250528",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_2355"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_2355",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "824",
@@ -69,7 +74,8 @@
     "discussioni": 18,
     "dal": "20241209",
     "al": "20250116",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_824"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_824",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "1627",
@@ -81,7 +87,8 @@
     "discussioni": 10,
     "dal": "20231228",
     "al": "20231229",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1627"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1627",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "1483",
@@ -93,7 +100,8 @@
     "discussioni": 9,
     "dal": "20240301",
     "al": "20240327",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1483"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1483",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "2112-bis",
@@ -105,7 +113,8 @@
     "discussioni": 7,
     "dal": "20241029",
     "al": "20241220",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_2112-bis"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_2112-bis",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "1752",
@@ -117,7 +126,8 @@
     "discussioni": 11,
     "dal": "20240304",
     "al": "20240418",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1752"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1752",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "75",
@@ -129,7 +139,8 @@
     "discussioni": 6,
     "dal": "20230710",
     "al": "20230712",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_75"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_75",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "1238",
@@ -141,7 +152,8 @@
     "discussioni": 14,
     "dal": "20230622",
     "al": "20230629",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1238"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1238",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "459",
@@ -153,7 +165,8 @@
     "discussioni": 14,
     "dal": "20230522",
     "al": "20240214",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_459"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_459",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "1114",
@@ -165,7 +178,8 @@
     "discussioni": 10,
     "dal": "20230426",
     "al": "20230607",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1114"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1114",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "1437",
@@ -177,7 +191,8 @@
     "discussioni": 6,
     "dal": "20231002",
     "al": "20231115",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1437"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_1437",
+    "sviluppo_disponibile": true
   },
   {
     "numero_camera": "2397",
@@ -189,6 +204,7 @@
     "discussioni": 2,
     "dal": "20250513",
     "al": "20250610",
-    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_2397"
+    "uri": "http://dati.camera.it/ocd/attocamera.rdf/ac19_2397",
+    "sviluppo_disponibile": true
   }
 ]

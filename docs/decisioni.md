@@ -343,3 +343,38 @@ ogni volta.
 **Perché.** "Nessuna dipendenza inutile". Uno spike che serve a fare due
 POST HTTP non giustifica una dipendenza, e non deve costringere chi lo
 rilegge a installare qualcosa per eseguirlo.
+
+---
+
+## 2026-09-03 — `web/` collegato ai dati veri per tutto il catalogo
+
+**Decisione.** Aggiunto `scripts/genera_dati_web.py`: chiama
+`sviluppo_atto()` (src/banchi/sources/atto.py) per ogni atto di
+`web/data/catalogo_atti.json` e scrive `web/data/atto_<numero>_sviluppo.json`
+nello stesso formato usato finora solo per C. 2397. Il frontend
+(`web/index.html`) non ha più il numero 2397 cablato: `selectAtto` fa fetch
+generico su `data/atto_${numero}_sviluppo.json` con uno stato di
+caricamento/mancante per atto, così la pagina di un provvedimento senza
+dati generati resta un fallback esplicito invece di un errore silenzioso.
+
+**Verificato.** 16/16 atti del catalogo generati, 8497 interventi totali,
+0 mancanti (100% di aggancio testo-metadati, stesso controllo già fatto per
+C. 2397 il 2026-09-03 in precedenza). Verificato a occhio nel browser su
+C. 705, C. 1114 e C. 2397: nessun errore in console.
+
+**Perché ora.** CLAUDE.md segnalava esplicitamente `web/` come "ancora
+scollegato dalla pipeline dati reale" e la nota da rivedere "quando la
+pipeline avrà un output servibile" — lo è, da qui i tre moduli di
+`src/banchi/sources/` scritti in precedenza oggi stesso.
+
+**Nota.** `scripts/genera_dati_web.py` è uno script di collegamento
+(pipeline -> file statici), non fa parte di `src/banchi/`: va rieseguito a
+mano quando il catalogo cambia o quando `src/banchi/sources/` cambia
+formato. Non è automatizzato (nessun cron, nessun hook di build) — scelta
+deliberata finché `web/` resta un mockup statico su Vercel senza backend.
+
+**Cosa la renderebbe sbagliata.** Se il catalogo cresce molto (centinaia di
+atti), 16 file JSON da 0.7-2 MB l'uno committati in `web/data/` (~14 MB
+totali oggi) diventa un problema di dimensione del repo prima che di
+tempo di generazione — a quel punto serve un backend che serva i dati a
+richiesta invece di file statici pre-generati.
