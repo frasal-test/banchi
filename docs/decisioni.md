@@ -226,6 +226,42 @@ Nessuna verifica TLS è stata disabilitata.
 
 ---
 
+## 2026-09-03 — Definitivo/provvisorio: si dà per definitivo ciò che si preleva
+
+**Decisione.** Il vincolo originale ("solo resoconto DEFINITIVO, altrimenti
+il provvedimento resta in coda") viene sostituito: il resoconto prelevato dal
+sito ufficiale si considera definitivo, senza attesa né coda. Se in futuro
+emerge un modo affidabile per distinguerli, si rivede la regola.
+
+**Perché.** Verificati tre endpoint ufficiali sulla seduta 677 (17 giugno
+2026, la più recente nel grafo LOD): il contratto WSDL di `elabora.asmx`
+(parametro `tipo` = stenografico/sommario/allegato_a/allegato_b/sommario_new,
+nessun valore relativo allo stato editoriale), l'HTML di `getDocumento.ashx`,
+e la variante `formato_xml` (`<seduta>`, `<resoconto tipo="stenografico">`,
+nessun attributo di stato). Nessuno dei tre espone un flag
+definitivo/provvisorio. Le uniche occorrenze testuali di "provvisorio" e
+"definitivo" trovate sono dentro i discorsi dei deputati, non nei metadati.
+Mettere in coda un provvedimento in attesa di un segnale che la fonte non dà
+significa non processare mai nulla, o farlo sulla base di un'euristica
+temporale indimostrata.
+
+**Osservazione emersa dalla verifica, utile ma non decisiva.** Il grafo LOD
+(`dati.camera.it`) ha di suo un ritardo di mesi rispetto alla data corrente:
+alla verifica, la seduta più recente raggiungibile da SPARQL era di circa due
+mesi e mezzo prima. Qualunque intervento raggiungibile da lì è quindi con
+ogni probabilità già editorialmente stabile per il solo fatto del ritardo. Il
+problema provvisorio/definitivo, se esiste, riguarda le sedute più recenti
+non ancora nel grafo — fuori perimetro dell'ingestione LOD-driven attuale, non
+dentro.
+
+**Cosa la renderebbe sbagliata.** Se si scoprisse un caso concreto di
+resoconto raggiungibile da SPARQL il cui testo cambia tra due fetch a
+distanza di tempo: significherebbe che il ritardo del grafo non basta a
+garantire stabilità, e servirebbe allora un controllo attivo (es. hash del
+contenuto su fetch ripetuti) prima di pubblicare.
+
+---
+
 ## 2026-08-05 — Solo stdlib per gli spike
 
 **Decisione.** Lo spike di verifica usa `urllib` dalla stdlib, non `requests`.

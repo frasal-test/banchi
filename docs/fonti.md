@@ -102,9 +102,27 @@ mozioni, question time, discussioni generali senza `rif_attoCamera`.
 
 ### Vincolo di processo
 
-Si analizza **solo il resoconto stenografico DEFINITIVO**. Se per una seduta
-esiste solo il provvisorio, il provvedimento resta in coda e non si processa.
-Il provvisorio può cambiare; il definitivo no.
+Il resoconto prelevato dal sito ufficiale si considera definitivo. **Nessuno
+dei tre endpoint verificati espone un flag definitivo/provvisorio**:
+controllati il WSDL di `elabora.asmx`, l'HTML restituito da
+`getDocumento.ashx` e la variante `formato_xml` sulla seduta 677 (17 giugno
+2026, la più recente nel grafo LOD al momento della verifica) — nessuna delle
+tre porta un attributo di stato editoriale. Le uniche occorrenze delle parole
+"provvisorio"/"definitivo" trovate sono dentro il testo dei discorsi, non nei
+metadati.
+
+Decisione: non si mette in coda nulla in attesa di un segnale che la fonte
+non fornisce. Se in futuro emerge un modo affidabile per distinguerli (es.
+osservare la stabilità del testo su fetch ripetuti), si rivede la regola —
+vedi [decisioni.md](decisioni.md).
+
+Nota utile emersa dalla verifica: il grafo LOD ha di per sé un ritardo di
+mesi rispetto alla data corrente (seduta più recente disponibile: mesi prima
+di "oggi"), quindi qualunque intervento raggiungibile da SPARQL è con ogni
+probabilità già editorialmente stabile per il solo fatto del ritardo. Il
+problema provvisorio/definitivo riguarderebbe casomai le sedute più recenti
+non ancora presenti nel grafo, fuori perimetro dell'ingestione LOD-driven
+attuale.
 
 ### Cache
 

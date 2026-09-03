@@ -30,8 +30,12 @@ violazione identitaria prima di essere implementata.
 - **MAI ri-hosting di video WebTV**: la licenza non lo consente. Solo embed
   ufficiale, se e quando servirà.
 - **Nessuna trascrizione audio, nessun ASR.** Solo testo ufficiale.
-- **Solo resoconto stenografico DEFINITIVO.** Se per una seduta esiste solo il
-  provvisorio, il provvedimento resta in coda e non si processa.
+- **Il resoconto stenografico prelevato dal sito ufficiale si considera
+  definitivo.** Nessuno degli endpoint ufficiali (SPARQL, `getDocumento.ashx`,
+  `formato_xml`) espone un flag definitivo/provvisorio — verificato il
+  2026-09-03, vedi [docs/decisioni.md](docs/decisioni.md). Non si mette in
+  coda nulla in attesa di un segnale che la fonte non fornisce. Se in futuro
+  emerge un modo affidabile per distinguerli, si rivede questa regola.
 - **Perimetro dichiarato: fase d'Aula alla Camera.** Il Senato ha open data
   separati ed è fuori portata; va dichiarato esplicitamente nell'output.
 - **Cache su disco obbligatoria** in `data/raw/` per tutto ciò che si scarica.
