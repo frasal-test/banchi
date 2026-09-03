@@ -262,6 +262,55 @@ contenuto su fetch ripetuti) prima di pubblicare.
 
 ---
 
+## 2026-09-03 — `dc:title` sul gruppo non è la sigla
+
+**Osservazione.** `?gruppo dc:title ?sigla` restituisce il nome pieno del
+gruppo con l'intervallo di date incollato in coda, es. `"FORZA ITALIA - IL
+POPOLO DELLA LIBERTA' - BERLUSCONI PRESIDENTE (FI-PDL) (19.03.2013"`
+(stringa troncata così dalla fonte, non da un parsing nostro). spike/01
+copriva il sintomo tagliando alla prima parentesi — che però butta via anche
+la sigla vera, lasciando solo il nome esteso.
+
+**Correzione.** La sigla pulita è su un predicato diverso:
+`dcterms:alternative` (`http://purl.org/dc/terms/alternative`), verificato
+ispezionando tutti i predicati di un nodo `ocd:gruppoParlamentare`: dà
+`"MISTO"`, `"FI-PPE"` ecc. senza post-processing.
+
+**Cosa la renderebbe sbagliata.** Se un gruppo avesse più di un valore per
+`dcterms:alternative` (sigla cambiata a parità di gruppo): non osservato, ma
+la query in `camera_lod.py` prende il primo che trova — da verificare se mai
+si nota una sigla sbagliata per un gruppo che sappiamo aver cambiato nome.
+
+---
+
+## 2026-09-03 — Fine della sola fase di verifica: primo codice in `src/`
+
+**Decisione.** Scritto il primo modulo di produzione:
+`src/banchi/sources/{camera_lod,resoconto_stenografico,atto}.py` e
+`src/banchi/model/intervento.py`. Realizzano il taglio orizzontale su un
+atto — dalla richiesta dell'utente di una pagina per argomento che segua un
+provvedimento attraverso tutte le sue sedute, non seduta per seduta.
+
+**Verificato su un caso reale.** Atto C. 2397 (decreto-legge 54/2025): 22
+interventi su 2 sedute (0479, 0490), tutti agganciati al testo del resoconto
+(0 mancanti), ordine cronologico corretto attraverso le sedute, gruppo
+attribuito alla data e sigla pulita.
+
+**Perché ora e non prima.** La voce "Stato del progetto" in CLAUDE.md
+vietava client/modello/DB finché la profondità del LOD non fosse verificata:
+lo è, dal 5 agosto. Da qui in avanti si costruisce incrementalmente dentro
+`src/banchi/`, nell'ordine ingestione → modello → pubblicazione (deciso in
+conversazione, non ancora qui prima d'ora). Se un pezzo si rivela sbagliato
+si butta e si riparte, senza tornare allo stadio spike-only.
+
+**Nota.** Non c'è ancora persistenza oltre la cache dei resoconti grezzi in
+`data/raw/` (nessun DB, nessun modello per Atto/Seduta/Gruppo): i metadati
+LOD si rifanno da SPARQL a ogni chiamata. Da rivedere quando si costruisce la
+home page, che ha bisogno di leggere più atti senza interrogare l'endpoint
+ogni volta.
+
+---
+
 ## 2026-08-05 — Solo stdlib per gli spike
 
 **Decisione.** Lo spike di verifica usa `urllib` dalla stdlib, non `requests`.

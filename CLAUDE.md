@@ -81,11 +81,17 @@ altri progetti) e annotazione via Anthropic API.
 
 ## Stato del progetto
 
-Fase di verifica delle ipotesi sui dati. **Non scrivere client, modelli dati,
-parser del resoconto o codice DB** finché la forma del progetto non è decisa.
+La fase di sola verifica è chiusa (2026-08-05: la catena LOD è popolata per
+la XIX, vedi `spike/00_verifica_profondita_lod.py`). Da qui si costruisce
+incrementalmente dentro `src/banchi/`, nell'ordine **ingestione → modello →
+pubblicazione**: ogni pezzo dipende dal precedente per avere dati veri su cui
+lavorare. Se un pezzo si rivela sbagliato si butta e si riparte — non si
+torna allo stadio spike-only per questo.
 
-Ipotesi aperta che condiziona tutto il resto: la documentazione OCD descrive
-la catena atto → assegnazione → dibattito → discussione → intervento del
-singolo deputato, ma si riferisce alla **XVI legislatura**. Che sia popolata
-allo stesso livello di dettaglio per la **XIX** è un'ipotesi da verificare,
-non un fatto. Vedi `spike/00_verifica_profondita_lod.py`.
+Primo pezzo scritto (2026-09-03): `src/banchi/sources/{camera_lod,
+resoconto_stenografico,atto}.py` — dato un atto Camera, restituisce lo
+sviluppo cronologico completo dei suoi interventi d'Aula attraverso tutte le
+sedute del suo iter, testo incluso. Verificato su C. 2397. Nessuna
+persistenza oltre la cache dei resoconti grezzi: i metadati LOD si rifanno da
+SPARQL a ogni chiamata, da rivedere quando serve una home page che legge più
+atti insieme.
