@@ -262,6 +262,31 @@ contenuto su fetch ripetuti) prima di pubblicare.
 
 ---
 
+## 2026-09-03 — `web/` è un mockup statico, scollegato dalla pipeline
+
+**Decisione.** Il primo frontend pubblicabile (`web/`) è stato costruito in
+una chat separata con Claude Design: un canvas `.dc.html` più `support.js`
+(React/ReactDOM/Babel da CDN, nessun build step) che legge dati statici da
+`web/data/*.json`. Deployato su Vercel (progetto `banchi`, root `./web`,
+collegato a GitHub — push su `main` fa deploy automatico). Dettagli operativi
+(URL, team, limite del connector Vercel) in memoria di progetto, non qui:
+qui conta solo la scelta strutturale.
+
+**Perché.** Serviva validare la direzione del layout — due schermate, home
+indice e pagina-argomento con taglio orizzontale — prima di spendere tempo a
+collegarlo alla pipeline reale. I dati d'esempio (`catalogo_atti_esempio.json`,
+`atto_2397_sviluppo.json`) sono stati generati DA `src/banchi/sources/atto.py`
+su un atto vero (C. 2397), non inventati: la forma è quella reale anche se il
+sito non interroga nulla dal vivo.
+
+**Cosa la renderebbe sbagliata, o comunque da rifare.** `web/` non ha
+persistenza né backend: quando la pipeline avrà un output servibile (vedi la
+nota "Nessuna persistenza oltre la cache" più sopra), `web/` va ricollegato a
+dati veri o riscritto — è dichiaratamente un mockup, non l'inizio del sito
+definitivo.
+
+---
+
 ## 2026-09-03 — `dc:title` sul gruppo non è la sigla
 
 **Osservazione.** `?gruppo dc:title ?sigla` restituisce il nome pieno del
