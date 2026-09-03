@@ -1,0 +1,235 @@
+# Log delle decisioni
+
+Ogni scelta strutturale non ovvia va registrata qui **con la motivazione**.
+Formato: data, decisione, perché, cosa la renderebbe sbagliata.
+
+---
+
+## 2026-08-05 — La chiave primaria è quella Camera
+
+**Decisione.** Nel modello dati il provvedimento è identificato dal numero
+atto Camera; le chiavi Senato e le denominazioni ufficiali (decreto-legge,
+data, numero) sono alias.
+
+**Perché.** Lo stesso provvedimento ha chiavi diverse in sistemi diversi:
+decreto-legge 12 giugno 2026 n. 100 = S. 1939 al Senato = C. 3053 alla Camera.
+Il perimetro dichiarato del progetto è la fase d'Aula alla Camera, quindi la
+chiave Camera è l'unica sempre presente.
+
+**Cosa la renderebbe sbagliata.** Un'estensione al Senato: lì la chiave Camera
+può mancare del tutto e servirebbe un identificativo neutro sopra entrambe.
+Per questo gli alias esistono fin dall'inizio invece di essere aggiunti dopo.
+
+---
+
+## 2026-08-05 — Prima di scrivere codice si verifica la profondità del LOD
+
+**Decisione.** Nessun client, modello dati, parser o codice DB prima di aver
+visto il dato grezzo della catena atto → intervento per la XIX legislatura.
+
+**Perché.** La documentazione OCD che descrive la catena
+atto → assegnazione → dibattito → discussione → intervento si riferisce alla
+XVI legislatura. Se la catena è popolata anche per la XIX, la struttura del
+dibattito si legge dal LOD. Se non lo è, va ricostruita dal testo del
+resoconto stenografico — progetto diverso, con costi e rischi diversi.
+Scrivere astrazioni prima di sapere quale dei due mondi è quello reale
+significa buttarle.
+
+**Stato.** CHIUSA il 2026-08-05. La catena **è popolata** per la XIX, ma con
+una topologia diversa da quella documentata per la XVI: non passa da
+`assegnazione`, e la direzione degli archi è `dibattito → discussione →
+intervento`. Dettaglio e cardinalità in [docs/fonti.md](fonti.md).
+Decisione sulla forma del progetto: in attesa.
+
+---
+
+## 2026-08-05 — L'atto 3053 non è un caso di test valido
+
+**Osservazione.** L'atto scelto per lo spike (C. 3053, decreto-legge 12 giugno
+2026 n. 100) ha zero interventi nel LOD. Non perché il LOD sia incompleto: il
+provvedimento è stato assegnato alla I Commissione **il 30 luglio 2026**, sei
+giorni prima della rilevazione, e non è ancora arrivato in Aula. Gli 8
+dibattiti collegati esistono come URI ma sono nodi vuoti, senza archi uscenti.
+
+**Conseguenza.** Un URI di dibattito presente non implica che il dibattito
+sia avvenuto. Il modello dati deve distinguere "dibattito previsto/annunciato"
+da "dibattito con discussioni popolate", altrimenti un provvedimento in corso
+d'iter appare identico a uno concluso senza interventi.
+
+---
+
+## 2026-08-05 — Il filtro Aula non si fa con rif_assemblea
+
+**Decisione.** Per isolare la fase d'Aula si filtra sulla stringa
+`sezione=assemblea` dentro `dc:relation` dell'intervento, non su
+`ocd:rif_assemblea`.
+
+**Perché.** `ocd:rif_assemblea` vale `a19` per tutti gli interventi della
+legislatura, **commissioni incluse**: identifica la Camera nella XIX, non la
+sede dei lavori. Usarlo come filtro d'Aula farebbe entrare nel perimetro
+62.551 interventi di commissione, cioè metà del totale, violando in silenzio
+il perimetro dichiarato del progetto.
+
+**Cosa la renderebbe sbagliata.** Un cambio di formato negli URL di
+`documenti.camera.it`: il filtro è basato su una stringa dentro un URL, non su
+una proprietà semantica. Va trattato come euristica fragile e verificato a
+ogni ingestione, non dato per acquisito.
+
+---
+
+## 2026-08-05 — L'allineamento intervento↔testo non va ricostruito
+
+**Osservazione.** `dc:relation` dell'intervento contiene l'URL del resoconto
+stenografico **con l'ancora del singolo intervento**
+(`ancora=sed0029.stenografico.tit00110.sub00010.int01770`).
+
+**Conseguenza.** Il problema più caro che ci si poteva aspettare — allineare
+il record LOD di un intervento al suo testo nel resoconto — è già risolto
+dalla fonte. Non serve fuzzy matching su nome del deputato e ordine di
+intervento.
+
+---
+
+## 2026-08-05 — Il rumore è la presidenza, non la brevità
+
+**Struttura del resoconto.** Un turno di parola è spezzato su più paragrafi:
+`<p class="intervento">` apre il turno e porta il nome del deputato in link,
+`<p class="interventoVirtuale">` ne è la **continuazione**. Nella seduta 0028:
+120 turni, 574 paragrafi. Chi misura solo i `<p class="intervento">` misura
+l'incipit del discorso, non il discorso.
+
+**Osservazione (seduta 0028, turni ricomposti).** Mediana complessiva 199
+caratteri, ma la distribuzione è nettamente bimodale:
+
+| | turni | mediana |
+|---|---|---|
+| Presidenza | 66 (55%) | brevissimi |
+| Deputati e governo | 54 (45%) | **3.796 caratteri** |
+
+Solo il 26% dei turni non di presidenza sta sotto i 400 caratteri.
+
+**Conseguenza.** L'unità argomentativa non va cercata con una soglia di
+lunghezza: **basta escludere la presidenza**, che è metà dei turni ed è
+identificabile dal ruolo, non da un'euristica. Tolta quella, i turni dei
+deputati sono discorsi veri, con mediana di quasi 4.000 caratteri: materiale
+adeguato a un'analisi della struttura argomentativa.
+
+**Cosa la renderebbe sbagliata.** La misura viene da una sola seduta, per di
+più anomala (seduta fiume ostruzionistica). Il rapporto presidenza/deputati
+va rimisurato su sedute ordinarie prima di darlo per stabile.
+
+---
+
+## 2026-08-05 — Il numero di interventi è un indicatore di tattica, non di merito
+
+**Osservazione.** Estratto l'atto C. 705 (DL 162/2022, ergastolo ostativo e
+rave): 1.030 interventi d'Aula in 3 sedute, di cui **954 in un solo giorno** —
+il 28 dicembre 2022. I titoli delle discussioni nel LOD dicono esplicitamente
+*"seduta fiume"* e *"sui costi dell'utilizzo di azioni di tipo
+ostruzionistico"*. La distribuzione per gruppo che ne risulta è PD 32,5% e M5S
+29,3% contro FdI 4,3% e Lega 0,8%.
+
+**Conseguenza.** Quella distribuzione **non dice** che l'opposizione abbia
+argomentato otto volte più della maggioranza: dice che ha usato lo strumento
+ostruzionistico. Pubblicare il conteggio grezzo come "chi ha portato più
+argomenti" sarebbe una lettura falsa del dato, per quanto il dato sia esatto.
+La forma d'Aula (seduta fiume, contingentamento dei tempi, dichiarazioni di
+voto) va trattata come variabile di controllo, non come rumore.
+
+---
+
+## 2026-08-05 — Il ponte LOD → testo è verificato end-to-end
+
+**Osservazione.** Scaricata la seduta 0028 dall'URL contenuto in `dc:relation`
+(`getDocumento.ashx`, consentito dal robots.txt di `documenti.camera.it`, che
+vieta solo `getAudioVideo.asp` e un file statico). L'ancora del LOD
+`sed0028.stenografico.tit00030.sub00010.int00120` corrisponde esattamente a
+`<p class="intervento" id="sed0028.stenografico.tit00030.sub00010.int00120">`
+nel documento, e il markup contiene già nome del deputato, link alla scheda
+personale e **sigla del gruppo inline** (`(FI-PPE)`).
+
+**Conseguenza.** L'aggancio intervento↔testo è esatto e non probabilistico.
+Inoltre il resoconto porta con sé una seconda attribuzione di gruppo,
+indipendente da quella LOD: utile come controllo incrociato sui deputati che
+hanno cambiato gruppo.
+
+**Punto aperto.** Non è ancora accertato come distinguere il resoconto
+**definitivo** dal provvisorio via `getDocumento.ashx`. Il vincolo di progetto
+impone il definitivo: va risolto prima di qualunque ingestione sistematica,
+probabilmente tramite il web service `elabora.asmx`.
+
+---
+
+## 2026-08-05 — Due tipi di cambiamento, due trattamenti diversi
+
+**Distinzione.** Nel dato della Camera cambiano due cose che è facile confondere:
+
+1. **Cambia il mondo** — un deputato passa da un gruppo all'altro, un ministro
+   cambia incarico, una commissione si ricompone.
+2. **Cambia il dato** — la Camera corregge un'attribuzione, aggiunge un
+   intervento mancante, ritocca un record. Nel mondo non è successo nulla.
+
+**Decisione.** Non si costruisce nessuna tabella di storicizzazione per il
+caso 1: **è già storicizzato alla fonte**. L'appartenenza a un gruppo non è un
+valore singolo ma un intervallo, con `ocd:startDate`, `ocd:endDate` e
+`ocd:motivoTermine` sul nodo `ocd:aderisce`. Lo stesso vale per ogni entità
+con durata (incarichi, uffici di presidenza, composizione delle commissioni):
+l'ontologia OCD è costruita così. Una singola estrazione contiene già tutta la
+sequenza storica, e permette di attribuire il gruppo **alla data
+dell'intervento** senza tenere alcuno storico proprio.
+
+Misura al 2026-08-05: su 414 deputati della XIX, 362 non hanno mai cambiato
+gruppo, 37 una volta, 13 due volte, 2 tre volte — 52 mobili in totale.
+
+**Per il caso 2 invece si versiona**, e la ragione è giornalistica prima che
+tecnica: un pezzo pubblicato deve poter dire *"analisi sul dato al
+5 agosto 2026"*. Senza, un conto non è rifacibile e un articolo non è
+difendibile da una contestazione. Non serve una tabella dedicata: basta datare
+ogni sincronizzazione e conservare la risposta grezza dell'endpoint. Alla
+scala in gioco (~334 MB di testo per l'intera legislatura, più qualche decina
+di MB di grafo) lo spazio non è un vincolo.
+
+**Cosa la renderebbe sbagliata.** Se si scoprisse che la Camera **riscrive**
+gli intervalli storici invece di chiuderli e aprirne di nuovi — cioè se una
+rettifica cancellasse il passato invece di aggiungersi. Non osservato, ma non
+escluso: da verificare confrontando due estrazioni a distanza di mesi.
+
+---
+
+## 2026-08-05 — Su questo endpoint, `DISTINCT` sempre
+
+**Regola.** Ogni query SPARQL verso `dati.camera.it` usa `SELECT DISTINCT`, e
+ogni aggregazione usa `COUNT(DISTINCT ?x)`. Un `COUNT` senza `DISTINCT` è da
+considerarsi sbagliato finché non si dimostra il contrario.
+
+**Perché.** Le triple del grafo sono duplicate: ogni entità porta il proprio
+`rdf:type` due volte, e i nodi collegati si moltiplicano di conseguenza. Senza
+`DISTINCT`, una query sui cambi di gruppo restituisce ogni adesione due volte
+e porta a concludere che **tutti** i 414 deputati hanno cambiato gruppo,
+invece di 52. L'errore non dà errore: dà un numero plausibile e sbagliato.
+
+**Come accorgersene.** Se un conteggio viene esattamente doppio, o se ogni
+entità sembra avere un numero pari di relazioni, è quasi sempre questo.
+
+---
+
+## 2026-08-05 — TLS: si usa il truststore di sistema
+
+**Decisione.** Gli script usano i root certificate del keychain macOS estratti
+con `/usr/bin/security`, non il bundle `certifi` di default di Python.
+
+**Perché.** Su questa macchina la catena TLS verso `dati.camera.it` contiene un
+certificato presente nel keychain ma non in `certifi`: senza questo accorgimento
+ogni query fallisce con `CERTIFICATE_VERIFY_FAILED` mentre `curl` funziona,
+il che rende il sintomo facile da attribuire erroneamente all'endpoint.
+Nessuna verifica TLS è stata disabilitata.
+
+---
+
+## 2026-08-05 — Solo stdlib per gli spike
+
+**Decisione.** Lo spike di verifica usa `urllib` dalla stdlib, non `requests`.
+
+**Perché.** "Nessuna dipendenza inutile". Uno spike che serve a fare due
+POST HTTP non giustifica una dipendenza, e non deve costringere chi lo
+rilegge a installare qualcosa per eseguirlo.
