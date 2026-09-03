@@ -78,6 +78,11 @@ altri progetti) e annotazione via Anthropic API.
 - `docs/decisioni.md` — log delle scelte **con la motivazione**. Ogni scelta
   strutturale che non è ovvia va registrata lì.
 - `data/raw/` — cache, in `.gitignore`. Mai committata.
+- `web/` — frontend statico (mockup generato con Claude Design, dati JSON
+  statici, nessun build step). Deployato su Vercel come progetto separato
+  `banchi` (root directory `./web`, collegato al repo GitHub per deploy
+  automatico ad ogni push su `main`, nessun dominio custom). Ancora
+  scollegato dalla pipeline dati reale in `src/banchi/`.
 
 ## Stato del progetto
 
@@ -95,3 +100,9 @@ sedute del suo iter, testo incluso. Verificato su C. 2397. Nessuna
 persistenza oltre la cache dei resoconti grezzi: i metadati LOD si rifanno da
 SPARQL a ogni chiamata, da rivedere quando serve una home page che legge più
 atti insieme.
+
+Primo mockup di `pubblicazione` (2026-09-03): `web/`, generato con Claude
+Design e deployato su Vercel (vedi sopra). Dati statici (JSON), non ancora
+collegato a `src/banchi/`. Serve solo a validare la direzione del design;
+quando la pipeline avrà un output servibile, `web/` va ricollegato a dati
+veri o rifatto.
