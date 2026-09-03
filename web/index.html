@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="_ds/modernist-83190bd8-233f-41fd-a40f-8aca8baae3c7/styles.css">
+<script src="_ds/modernist-83190bd8-233f-41fd-a40f-8aca8baae3c7/_ds_bundle.js"></script>
+<style>
+:root[data-theme="dark"] {
+  --color-bg: #171615;
+  --color-surface: #211f1e;
+  --color-text: #f2f0ef;
+  --color-divider: color-mix(in srgb, #f2f0ef 32%, transparent);
+  --color-accent: #ff6b48;
+  --color-accent-600: #ff855f;
+  --color-accent-700: #ffab8f;
+  --color-accent-100: color-mix(in srgb, #ff6b48 16%, #171615);
+  --color-accent-800: #ffd9cc;
+  --color-neutral-100: #262423;
+  --color-neutral-200: #2f2d2b;
+  --color-neutral-700: #b8b3b1;
+  --color-neutral-800: #d7d3d1;
+  --color-neutral-900: #f8f4f2;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--color-divider); }
+.bk-row:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);transition:background .15s,color .15s;">
+
+<header class="nav" style="flex-wrap:wrap;row-gap:6px;">
+  <div class="nav-brand">Banchi</div>
+  <div style="margin-right:auto;font-size:13px;opacity:.6;">Struttura del dibattito d'Aula — Camera dei deputati, XIX legislatura</div>
+  <button class="btn btn-icon" onClick="{{ toggleTheme }}" aria-label="Cambia tema" style="border:1px solid var(--color-divider);">
+    <sc-if value="{{ isDark }}" hint-placeholder-val="{{ false }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"></line><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"></line></svg>
+    </sc-if>
+    <sc-if value="{{ isLight }}" hint-placeholder-val="{{ true }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg>
+    </sc-if>
+  </button>
+</header>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<main style="max-width:1200px;margin:0 auto;padding:var(--space-8) var(--space-6) 100px;">
+  <h1>Indice dei provvedimenti</h1>
+  <p class="text-muted" style="max-width:640px;font-size:14px;">Atti della XIX legislatura con dibattito d'Aula alla Camera. Seleziona un provvedimento per lo sviluppo cronologico completo di tutte le sedute.</p>
+
+  <div style="display:flex;gap:var(--space-3);align-items:center;margin:var(--space-6) 0 var(--space-4);flex-wrap:wrap;">
+    <div style="position:relative;flex:1;min-width:240px;">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.5;pointer-events:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </span>
+      <input class="input" style="padding-left:34px;" placeholder="Cerca per titolo o numero atto..." value="{{ searchQuery }}" onChange="{{ onSearchChange }}"/>
+    </div>
+    <select class="input" style="width:auto;" value="{{ sortBy }}" onChange="{{ onSortChange }}">
+      <option value="interventi_desc">Più interventi</option>
+      <option value="interventi_asc">Meno interventi</option>
+      <option value="date_desc">Più recenti</option>
+      <option value="date_asc">Più vecchi</option>
+      <option value="title_asc">Titolo A-Z</option>
+    </select>
+    <div class="text-muted" style="font-size:13px;white-space:nowrap;">{{ resultsCount }} atti</div>
+  </div>
+
+  <div style="border-top:2px solid var(--color-divider);">
+    <sc-for list="{{ filteredAtti }}" as="a" hint-placeholder-count="6">
+      <div class="bk-row" onClick="{{ a.onSelect }}" style="display:flex;flex-direction:column;gap:6px;padding:var(--space-3) 0;border-bottom:1px solid var(--color-divider);cursor:pointer;">
+        <div style="display:flex;gap:var(--space-3);align-items:baseline;flex-wrap:wrap;">
+          <span style="font-family:var(--font-heading);font-weight:800;font-size:15px;white-space:nowrap;flex:none;">C. {{ a.numero_camera }}</span>
+          <sc-if value="{{ a.hasSenato }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;opacity:.6;white-space:nowrap;flex:none;">Senato {{ a.alias_senato }}</span></sc-if>
+          <span class="tag tag-outline" style="white-space:nowrap;flex:none;">{{ a.naturaShort }}</span>
+        </div>
+        <div style="font-size:14px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ a.titoloShort }}</div>
+        <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:center;font-size:12px;opacity:.8;margin-top:2px;">
+          <span>{{ a.iniziativa }}</span>
+          <span>{{ a.periodoLabel }}</span>
+          <span>{{ a.discussioni }} sedute</span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            <strong style="font-size:13px;">{{ a.interventi_aula }} interventi</strong>
+            <span style="width:60px;height:6px;background:var(--color-neutral-200);display:inline-block;">
+              <span style="height:100%;background:var(--color-accent);width:{{ a.volumeWidthPct }}%;display:block;"></span>
+            </span>
+          </span>
+        </div>
+      </div>
+    </sc-for>
+    <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:var(--space-6) 0;text-align:center;opacity:.6;font-size:13px;">Nessun atto corrisponde alla ricerca.</div>
+    </sc-if>
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ isAtto }}" hint-placeholder-val="{{ false }}">
+<main style="max-width:1200px;margin:0 auto;padding:var(--space-8) var(--space-6) 100px;">
+  <button class="btn btn-ghost" onClick="{{ backToHome }}" style="margin-bottom:var(--space-4);padding-left:0;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    Torna all'indice
+  </button>
+
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.6;margin-bottom:6px;">{{ selectedAtto.naturaShort }} · {{ selectedAtto.iniziativa }}</div>
+  <h1 style="font-size:28px;max-width:900px;">{{ selectedAtto.titoloShort }}</h1>
+  <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;font-size:13px;opacity:.85;margin:var(--space-3) 0 var(--space-5);">
+    <span style="white-space:nowrap;flex:none;">Camera n. {{ selectedAtto.numero_camera }}</span>
+    <sc-if value="{{ selectedAtto.hasSenato }}" hint-placeholder-val="{{ false }}"><span style="white-space:nowrap;flex:none;">Senato {{ selectedAtto.alias_senato }}</span></sc-if>
+    <span style="white-space:nowrap;flex:none;">{{ selectedAtto.periodoLabel }}</span>
+    <span style="white-space:nowrap;flex:none;">{{ selectedAtto.discussioni }} sedute</span>
+    <span style="white-space:nowrap;flex:none;">{{ selectedAtto.interventi_aula }} interventi</span>
+  </div>
+
+  <div style="display:flex;gap:var(--space-3);padding:var(--space-3);border:1px solid var(--color-divider);align-items:flex-start;margin-bottom:var(--space-6);">
+    <span style="flex:none;opacity:.7;padding-top:2px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="22" x2="21" y2="22"></line><line x1="6" y1="18" x2="6" y2="11"></line><line x1="10" y1="18" x2="10" y2="11"></line><line x1="14" y1="18" x2="14" y2="11"></line><line x1="18" y1="18" x2="18" y2="11"></line><polygon points="12 2 20 8 4 8"></polygon></svg>
+    </span>
+    <div style="font-size:13px;line-height:1.5;">
+      <strong>Perimetro dell'analisi:</strong> solo interventi in Assemblea (Aula) alla Camera dei deputati. Il Senato ha un proprio archivio di dati aperti, separato e non incluso qui.
+    </div>
+  </div>
+
+  <sc-if value="{{ hasSviluppo }}" hint-placeholder-val="{{ false }}">
+    <h2>Chi ha parlato, per gruppo</h2>
+    <p class="text-muted" style="font-size:13px;">Quota di interventi e caratteri pronunciati nei turni di merito (esclusa la presidenza).</p>
+    <div style="display:flex;height:14px;margin:var(--space-4) 0 var(--space-3);overflow:hidden;">
+      <sc-for list="{{ groupStats }}" as="g" hint-placeholder-count="4">
+        <div style="height:100%;background:{{ g.bg }};width:{{ g.pctWidth }}%;" title="{{ g.sigla }}"></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:var(--space-4);margin-bottom:var(--space-6);">
+      <sc-for list="{{ groupStats }}" as="g" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;">
+          <span style="width:12px;height:12px;background:{{ g.bg }};display:inline-block;flex:none;"></span>
+          <span style="font-weight:700;">{{ g.sigla }}</span>
+          <span class="text-muted">{{ g.count }} interventi · {{ g.pctLabel }}% · {{ g.charsLabel }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <h2>Sviluppo cronologico</h2>
+    <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center;padding:var(--space-3) 0;border-top:2px solid var(--color-divider);border-bottom:2px solid var(--color-divider);margin-bottom:var(--space-4);position:sticky;top:0;background:var(--color-bg);z-index:5;">
+      <sc-for list="{{ seduteChips }}" as="s" hint-placeholder-count="3">
+        <button class="btn btn-secondary" onClick="{{ s.onJump }}" style="font-size:12px;">{{ s.chipLabel }}</button>
+      </sc-for>
+      <div style="margin-left:auto;display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap;">
+        <input class="input" style="width:200px;" placeholder="Cerca nel testo..." value="{{ textFilter }}" onChange="{{ onTextFilterChange }}"/>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+          <input type="checkbox" checked="{{ hidePresidenza }}" onChange="{{ onToggleHidePresidenza }}"/>
+          Nascondi presidenza
+        </label>
+      </div>
+    </div>
+
+    <sc-for list="{{ sedute }}" as="s" hint-placeholder-count="2">
+      <section ref="{{ s.setRef }}" style="margin-bottom:var(--space-8);" data-screen-label="{{ s.label }}">
+        <h3 style="border-bottom:2px solid var(--color-divider);padding-bottom:var(--space-2);">{{ s.label }}</h3>
+        <sc-if value="{{ s.isEmpty }}" hint-placeholder-val="{{ false }}">
+          <p class="text-muted" style="font-size:13px;">Nessun intervento corrisponde ai filtri in questa seduta.</p>
+        </sc-if>
+        <sc-for list="{{ s.interventi }}" as="it" hint-placeholder-count="3">
+          <sc-if value="{{ it.isProc }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:8px;align-items:flex-start;padding:var(--space-2) 0;font-size:12px;opacity:.6;font-style:italic;">
+              <span style="flex:none;padding-top:1px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="22" x2="21" y2="22"></line><line x1="6" y1="18" x2="6" y2="11"></line><line x1="10" y1="18" x2="10" y2="11"></line><line x1="14" y1="18" x2="14" y2="11"></line><line x1="18" y1="18" x2="18" y2="11"></line><polygon points="12 2 20 8 4 8"></polygon></svg>
+              </span>
+              <div>{{ it.oratore }} — {{ it.textShort }}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ it.isMerito }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:var(--space-3);padding:var(--space-4) 0;border-top:1px solid var(--color-divider);">
+              <div style="width:4px;flex:none;background:{{ it.bg }};align-self:stretch;"></div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+                  <span style="font-weight:800;font-family:var(--font-heading);">{{ it.oratore }}</span>
+                  <sc-if value="{{ it.hasRuolo }}" hint-placeholder-val="{{ false }}"><span class="text-muted" style="font-size:12px;">{{ it.ruolo }}</span></sc-if>
+                  <span class="tag" style="background:{{ it.bg }};color:{{ it.fg }};">{{ it.groupLabel }}</span>
+                </div>
+                <p style="font-size:14px;line-height:1.6;margin:0;">{{ it.displayText }}</p>
+                <sc-if value="{{ it.isLong }}" hint-placeholder-val="{{ false }}">
+                  <button class="btn btn-ghost" onClick="{{ it.toggleExpand }}" style="font-size:12px;padding:4px 0;">{{ it.toggleLabel }}</button>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+        </sc-for>
+      </section>
+    </sc-for>
+  </sc-if>
+
+  <sc-if value="{{ noSviluppo }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:var(--space-6);border:1px solid var(--color-divider);text-align:center;opacity:.7;font-size:14px;">
+      Dati di sviluppo completo non ancora generati per questo atto in questo mockup — disponibile per l'atto C. 2397 (esequie e cerimonia d'inizio pontificato).
+    </div>
+  </sc-if>
+
+  <div style="margin-top:var(--space-8);padding-top:var(--space-4);border-top:2px solid var(--color-divider);font-size:12px;opacity:.6;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <span>Fonte: dati.camera.it — Camera dei deputati, licenza CC-BY</span>
+    <a href="{{ selectedAtto.uri }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;">
+      apri scheda atto
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+    </a>
+  </div>
+</main>
+</sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:900},&quot;defaultTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Comportamento&quot;},&quot;hidePresidenzaDefault&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Comportamento&quot;},&quot;defaultView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;home&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;atto&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Comportamento&quot;}}">
+const GROUP_HUES = {
+  'FI-PPE': 70, 'FDI': 105, 'IV-CR': 140, 'AVS': 175, 'AZ-PER-RE': 210,
+  'NM(N-C-U-I)M-CP': 245, 'M5S': 280, 'LEGA': 315, 'PD-IDP': 350
+};
+const MONTHS = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+const NATURA_MAP = {
+  'disegno legge ordinario': 'DDL ordinario',
+  'proposta legge ordinaria': 'PDL ordinaria',
+  'proposta legge costituzionale': 'PDL costituzionale'
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: this.props.defaultTheme ?? 'light',
+    view: this.props.defaultView ?? 'home',
+    selectedNumero: null,
+    atti: undefined,
+    sviluppoByNumero: {},
+    searchQuery: '',
+    sortBy: 'interventi_desc',
+    textFilter: '',
+    hidePresidenza: this.props.hidePresidenzaDefault ?? false,
+    expanded: {}
+  };
+
+  seduteRefs = {};
+  scrollContainer = null;
+
+  componentDidMount() {
+    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('banchi-theme') : null;
+    if (saved) this.setState({ theme: saved });
+    document.documentElement.dataset.theme = saved || this.state.theme;
+    fetch('data/catalogo_atti.json').then(r => r.json()).then(data => this.setState({ atti: data }));
+  }
+
+  toggleTheme = () => {
+    const next = this.state.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    if (typeof localStorage !== 'undefined') localStorage.setItem('banchi-theme', next);
+    this.setState({ theme: next });
+  };
+
+  formatShort(yyyymmdd) {
+    const d = parseInt(yyyymmdd.slice(6, 8), 10), m = parseInt(yyyymmdd.slice(4, 6), 10);
+    return `${d} ${MONTHS[m - 1]}`;
+  }
+  formatFull(yyyymmdd) {
+    const d = parseInt(yyyymmdd.slice(6, 8), 10), m = parseInt(yyyymmdd.slice(4, 6), 10), y = yyyymmdd.slice(0, 4);
+    return `${d} ${MONTHS[m - 1]} ${y}`;
+  }
+  naturaShort(n) { return NATURA_MAP[n] || n; }
+  cleanTitle(t) {
+    return (t || '').replace(/\s*\^\^http:\/\/www\.w3\.org\/2001\/XMLSchema#string\s*$/, '').trim();
+  }
+  groupColor(sigla) {
+    const dark = this.state.theme === 'dark';
+    if (!sigla || !(sigla in GROUP_HUES)) {
+      return dark ? { bg: 'var(--color-neutral-700)', fg: '#171615' } : { bg: 'var(--color-neutral-700)', fg: '#f8f4f4' };
+    }
+    const h = GROUP_HUES[sigla];
+    return dark ? { bg: `oklch(0.72 0.1 ${h})`, fg: '#171615' } : { bg: `oklch(0.52 0.12 ${h})`, fg: '#f8f4f4' };
+  }
+
+  selectAtto = (numero) => {
+    this.setState({ view: 'atto', selectedNumero: numero, textFilter: '', hidePresidenza: this.props.hidePresidenzaDefault ?? false });
+    if (numero === '2397' && !this.state.sviluppoByNumero['2397']) {
+      fetch('data/atto_2397_sviluppo.json').then(r => r.json()).then(data => {
+        this.setState({ sviluppoByNumero: { ...this.state.sviluppoByNumero, '2397': data } });
+      });
+    }
+  };
+  backToHome = () => this.setState({ view: 'home' });
+  onSearchChange = (e) => this.setState({ searchQuery: e.target.value });
+  onSortChange = (e) => this.setState({ sortBy: e.target.value });
+  onTextFilterChange = (e) => this.setState({ textFilter: e.target.value });
+  onToggleHidePresidenza = (e) => this.setState({ hidePresidenza: e.target.checked });
+  toggleExpand = (ancora) => this.setState({ expanded: { ...this.state.expanded, [ancora]: !this.state.expanded[ancora] } });
+  jumpToSeduta = (id) => {
+    const el = this.seduteRefs[id], container = this.scrollContainer;
+    if (el && container) {
+      const top = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - 8;
+      container.scrollTo({ top, behavior: 'smooth' });
+    } else if (el) {
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' });
+    }
+  };
+
+  renderVals() {
+    const atti = this.state.atti || [];
+    const maxInterventi = atti.length ? Math.max(...atti.map(a => a.interventi_aula)) : 1;
+    let filtered = atti.filter(a => {
+      const q = this.state.searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return (a.titolo || '').toLowerCase().includes(q) || (a.numero_camera || '').toLowerCase().includes(q) || (a.alias_senato || '').toLowerCase().includes(q);
+    });
+    const cmp = {
+      interventi_desc: (a, b) => b.interventi_aula - a.interventi_aula,
+      interventi_asc: (a, b) => a.interventi_aula - b.interventi_aula,
+      date_desc: (a, b) => b.dal.localeCompare(a.dal),
+      date_asc: (a, b) => a.dal.localeCompare(b.dal),
+      title_asc: (a, b) => this.cleanTitle(a.titolo).localeCompare(this.cleanTitle(b.titolo))
+    }[this.state.sortBy];
+    filtered = filtered.slice().sort(cmp);
+
+    const filteredAtti = filtered.map(a => ({
+      numero_camera: a.numero_camera,
+      alias_senato: a.alias_senato,
+      hasSenato: !!a.alias_senato,
+      titoloShort: this.cleanTitle(a.titolo),
+      naturaShort: this.naturaShort(a.natura),
+      iniziativa: a.iniziativa,
+      periodoLabel: `${this.formatShort(a.dal)} – ${this.formatFull(a.al)}`,
+      discussioni: a.discussioni,
+      interventi_aula: a.interventi_aula,
+      volumeWidthPct: Math.max(4, Math.round((a.interventi_aula / maxInterventi) * 100)),
+      onSelect: () => this.selectAtto(a.numero_camera)
+    }));
+
+    const selectedCatalog = atti.find(a => a.numero_camera === this.state.selectedNumero);
+    const selectedAtto = selectedCatalog ? {
+      numero_camera: selectedCatalog.numero_camera,
+      alias_senato: selectedCatalog.alias_senato,
+      hasSenato: !!selectedCatalog.alias_senato,
+      titoloShort: this.cleanTitle(selectedCatalog.titolo),
+      naturaShort: this.naturaShort(selectedCatalog.natura),
+      iniziativa: selectedCatalog.iniziativa,
+      periodoLabel: `${this.formatFull(selectedCatalog.dal)} – ${this.formatFull(selectedCatalog.al)}`,
+      discussioni: selectedCatalog.discussioni,
+      interventi_aula: selectedCatalog.interventi_aula,
+      uri: selectedCatalog.uri.replace('http://', 'https://')
+    } : { numero_camera: '', alias_senato: '', hasSenato: false, titoloShort: '', naturaShort: '', iniziativa: '', periodoLabel: '', discussioni: 0, interventi_aula: 0, uri: '#' };
+
+    const sviluppo = this.state.sviluppoByNumero[this.state.selectedNumero];
+    const hasSviluppo = this.state.view === 'atto' && !!sviluppo;
+    const noSviluppo = this.state.view === 'atto' && !!selectedCatalog && !sviluppo && this.state.selectedNumero !== '2397';
+
+    let groupStats = [], seduteChips = [], sedute = [];
+    if (hasSviluppo) {
+      const merito = sviluppo.interventi.filter(it => !it.presidenza);
+      const totals = {};
+      merito.forEach(it => {
+        const key = it.gruppo_sigla || 'GOVERNO';
+        if (!totals[key]) totals[key] = { count: 0, chars: 0 };
+        totals[key].count += 1;
+        totals[key].chars += (it.testo || '').length;
+      });
+      const totalCount = merito.length || 1;
+      groupStats = Object.keys(totals).sort((a, b) => totals[b].count - totals[a].count).map(sigla => {
+        const c = this.groupColor(sigla === 'GOVERNO' ? null : sigla);
+        return {
+          sigla: sigla === 'GOVERNO' ? 'Governo' : sigla,
+          bg: c.bg, fg: c.fg,
+          count: totals[sigla].count,
+          pctWidth: Math.round((totals[sigla].count / totalCount) * 1000) / 10,
+          pctLabel: Math.round((totals[sigla].count / totalCount) * 1000) / 10,
+          charsLabel: `${totals[sigla].chars.toLocaleString('it-IT')} caratteri`
+        };
+      });
+
+      const seduteOrder = [];
+      sviluppo.interventi.forEach(it => { if (!seduteOrder.includes(it.id_seduta)) seduteOrder.push(it.id_seduta); });
+      const textQ = this.state.textFilter.trim().toLowerCase();
+
+      seduteChips = seduteOrder.map(id => {
+        const first = sviluppo.interventi.find(it => it.id_seduta === id);
+        return { id, chipLabel: `Seduta n. ${parseInt(id, 10)} · ${this.formatShort(first.data)}`, onJump: () => this.jumpToSeduta(id) };
+      });
+
+      sedute = seduteOrder.map(id => {
+        const first = sviluppo.interventi.find(it => it.id_seduta === id);
+        let items = sviluppo.interventi.filter(it => it.id_seduta === id);
+        if (this.state.hidePresidenza) items = items.filter(it => !it.presidenza);
+        if (textQ) items = items.filter(it => (it.testo || '').toLowerCase().includes(textQ) || (it.oratore || '').toLowerCase().includes(textQ));
+        const mapped = items.map(it => {
+          const isProc = !!it.presidenza;
+          const testo = it.testo || '';
+          const isLong = testo.length > 520;
+          const expanded = !!this.state.expanded[it.ancora];
+          const c = isProc ? null : this.groupColor(it.gruppo_sigla);
+          return {
+            ancora: it.ancora,
+            isProc, isMerito: !isProc,
+            oratore: it.oratore,
+            ruolo: it.ruolo || '',
+            hasRuolo: !!it.ruolo,
+            groupLabel: it.gruppo_sigla || 'Governo',
+            bg: c ? c.bg : '', fg: c ? c.fg : '',
+            textShort: testo.length > 140 ? testo.slice(0, 140).trim() + '…' : testo,
+            displayText: isLong && !expanded ? testo.slice(0, 420).trim() + '…' : testo,
+            isLong, toggleLabel: expanded ? 'Mostra meno' : 'Leggi tutto',
+            toggleExpand: () => this.toggleExpand(it.ancora)
+          };
+        });
+        return {
+          id, label: `Seduta n. ${parseInt(id, 10)} · ${this.formatFull(first.data)}`,
+          isEmpty: mapped.length === 0,
+          interventi: mapped,
+          setRef: (el) => { this.seduteRefs[id] = el; }
+        };
+      });
+    }
+
+    return {
+      isDark: this.state.theme === 'dark',
+      isLight: this.state.theme !== 'dark',
+      toggleTheme: this.toggleTheme,
+      isHome: this.state.view === 'home',
+      isAtto: this.state.view === 'atto',
+      backToHome: this.backToHome,
+      searchQuery: this.state.searchQuery,
+      onSearchChange: this.onSearchChange,
+      sortBy: this.state.sortBy,
+      onSortChange: this.onSortChange,
+      resultsCount: filteredAtti.length,
+      noResults: filteredAtti.length === 0 && (this.state.atti !== undefined),
+      filteredAtti,
+      selectedAtto,
+      hasSviluppo, noSviluppo,
+      groupStats, seduteChips, sedute,
+      textFilter: this.state.textFilter,
+      onTextFilterChange: this.onTextFilterChange,
+      hidePresidenza: this.state.hidePresidenza,
+      onToggleHidePresidenza: this.onToggleHidePresidenza
+    };
+  }
+}
+</script>
+</body>
+</html>
