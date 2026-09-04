@@ -597,3 +597,105 @@ struttura dell'URL `schedaDeputato` sono pattern osservati, non documentati
 formalmente da camera.it: un cambio di piattaforma sul sito lato "umano"
 (non sugli endpoint di `documenti.camera.it` usati per lo scraping) li
 romperebbe senza preavviso. Da ricontrollare se compaiono link rotti.
+
+---
+
+## 2026-09-04 — Riassunti e vector search: grana per intervento, non per gruppo
+
+**Decisione.** Si introduce un DB (FastAPI + SQLite, con `sqlite-vec` per gli
+embedding) per una nuova funzione di riassunto degli interventi. Il riassunto
+si genera **one-shot al momento dell'acquisizione dell'atto** e resta legato
+per sempre al singolo intervento (`ancora`), non al gruppo — a differenza
+della prima bozza di schema discussa, che lo prevedeva a grana atto×gruppo.
+
+**Perimetro di generazione.** Niente riassunto (né embedding) per i turni di
+**presidenza**. I turni **`pubblicato_in_calce`** (testi autorizzati in
+calce, mai pronunciati in Aula — vedi la voce del 2026-09-04 sopra) **sì**,
+vengono riassunti: restano testo vero prodotto da un deputato, la loro
+esclusione dalle statistiche per gruppo è una scelta separata che riguarda i
+conteggi, non la disponibilità di un riassunto.
+
+**Due politiche di vettorizzazione distinte.**
+- **Riassunto**: testo breve, imbeddato per intero in un solo vettore
+  (`vec_riassunti`, 1:1 con `ancora`). Chunkarlo sarebbe controproducente:
+  frammenterebbe il punto di sintesi che deve restare recuperabile in un
+  colpo solo.
+- **Testo originale del turno**: chunkato prima di essere imbeddato
+  (`intervento_chunk` + `vec_intervento_chunk`), perché i turni di merito
+  sono lunghi e spesso multi-tema (mediana ~3.800 caratteri, vedi la voce
+  del 2026-08-05 "Il rumore è la presidenza, non la brevità"). I confini dei
+  chunk vanno presi dalla struttura già nota del resoconto (paragrafi
+  `<p class="intervento">` / `<p class="interventoVirtuale">`), non da un
+  text-splitter generico a caratteri fissi.
+
+**Punto aperto, deliberatamente non deciso ora.** Il modello di embedding —
+e se sarà lo stesso per riassunti e chunk o due modelli diversi con
+dimensioni diverse — si valuta più avanti. Vincolo già fissato: **deve
+girare in locale**, non un servizio di embedding esterno. Lo schema (vedi
+sotto) lascia la dimensione del vettore parametrica per questo.
+
+**Schema abbozzato** (non ancora implementato — nessun codice scritto con
+questa decisione):
+
+```sql
+CREATE TABLE atti (
+    numero_camera   TEXT PRIMARY KEY,
+    numero_senato   TEXT,
+    denominazione   TEXT,
+    creato_il       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE interventi (
+    ancora              TEXT PRIMARY KEY,
+    numero_camera       TEXT NOT NULL REFERENCES atti(numero_camera),
+    id_seduta           TEXT NOT NULL,
+    data                TEXT NOT NULL,
+    deputato_uri        TEXT,
+    deputato_nome       TEXT,
+    gruppo_sigla        TEXT,
+    gruppo_uri          TEXT,
+    ruolo               TEXT,
+    presidenza          INTEGER NOT NULL DEFAULT 0,
+    pubblicato_in_calce INTEGER NOT NULL DEFAULT 0,
+    dedotto             INTEGER NOT NULL DEFAULT 0,
+    testo               TEXT NOT NULL
+);
+
+CREATE TABLE riassunti (
+    ancora        TEXT PRIMARY KEY REFERENCES interventi(ancora),
+    testo         TEXT NOT NULL,
+    modello       TEXT NOT NULL,
+    generato_il   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE VIRTUAL TABLE vec_riassunti USING vec0(
+    ancora    TEXT PRIMARY KEY,
+    embedding FLOAT[N]
+);
+
+CREATE TABLE intervento_chunk (
+    id      INTEGER PRIMARY KEY,
+    ancora  TEXT NOT NULL REFERENCES interventi(ancora),
+    ordine  INTEGER NOT NULL,
+    testo   TEXT NOT NULL,
+    UNIQUE (ancora, ordine)
+);
+
+CREATE VIRTUAL TABLE vec_intervento_chunk USING vec0(
+    chunk_id  INTEGER PRIMARY KEY,
+    embedding FLOAT[N]
+);
+```
+
+**Nota identitaria.** Persistere il riassunto a grana di singolo intervento
+non viola il vincolo "output pubblicabile sempre per gruppo" (CLAUDE.md): il
+vincolo riguarda cosa si pubblica, non cosa si conserva — "il livello
+individuale resta interrogabile nel dato, mai nel titolo". Da rispettare
+quando si costruirà la superficie pubblica: nessuna vista che aggreghi o
+classifichi per deputato.
+
+**Cosa la renderebbe sbagliata.** Se la generazione one-shot si rivela
+troppo rigida — es. serve rigenerare un riassunto dopo una correzione della
+Camera al resoconto — va rivista l'assenza di versionamento sui riassunti
+(oggi una riga per `ancora`, sovrascrivibile ma senza storico). Non
+osservato finora, perché nessun riassunto è stato ancora generato.
