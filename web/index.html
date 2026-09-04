@@ -181,14 +181,27 @@ html, body { min-height: 100%; }
               <div style="width:4px;flex:none;background:{{ it.bg }};align-self:stretch;"></div>
               <div style="flex:1;min-width:0;">
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
-                  <span style="font-weight:800;font-family:var(--font-heading);">{{ it.oratore }}</span>
+                  <sc-if value="{{ it.hasDeputatoUrl }}" hint-placeholder-val="{{ false }}">
+                    <a href="{{ it.deputatoUrl }}" target="_blank" rel="noopener" style="font-weight:800;font-family:var(--font-heading);color:inherit;text-decoration:none;border-bottom:1px dotted currentColor;">{{ it.oratore }}</a>
+                  </sc-if>
+                  <sc-if value="{{ it.noDeputatoUrl }}" hint-placeholder-val="{{ true }}">
+                    <span style="font-weight:800;font-family:var(--font-heading);">{{ it.oratore }}</span>
+                  </sc-if>
                   <sc-if value="{{ it.hasRuolo }}" hint-placeholder-val="{{ false }}"><span class="text-muted" style="font-size:12px;">{{ it.ruolo }}</span></sc-if>
-                  <span class="tag" style="background:{{ it.bg }};color:{{ it.fg }};">{{ it.groupLabel }}</span>
+                  <sc-if value="{{ it.hasGruppoUrl }}" hint-placeholder-val="{{ false }}">
+                    <a class="tag" href="{{ it.gruppoUrl }}" target="_blank" rel="noopener" style="background:{{ it.bg }};color:{{ it.fg }};text-decoration:none;">{{ it.groupLabel }}</a>
+                  </sc-if>
+                  <sc-if value="{{ it.noGruppoUrl }}" hint-placeholder-val="{{ true }}">
+                    <span class="tag" style="background:{{ it.bg }};color:{{ it.fg }};">{{ it.groupLabel }}</span>
+                  </sc-if>
                 </div>
                 <p style="font-size:14px;line-height:1.6;margin:0;">{{ it.displayText }}</p>
-                <sc-if value="{{ it.isLong }}" hint-placeholder-val="{{ false }}">
-                  <button class="btn btn-ghost" onClick="{{ it.toggleExpand }}" style="font-size:12px;padding:4px 0;">{{ it.toggleLabel }}</button>
-                </sc-if>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                  <sc-if value="{{ it.isLong }}" hint-placeholder-val="{{ false }}">
+                    <button class="btn btn-ghost" onClick="{{ it.toggleExpand }}" style="font-size:12px;padding:4px 0;">{{ it.toggleLabel }}</button>
+                  </sc-if>
+                  <a href="{{ it.resocontoUrl }}" target="_blank" rel="noopener" class="text-muted" style="font-size:12px;">Vedi nel resoconto ufficiale</a>
+                </div>
               </div>
             </div>
           </sc-if>
@@ -233,6 +246,25 @@ const NATURA_MAP = {
   'proposta legge ordinaria': 'PDL ordinaria',
   'proposta legge costituzionale': 'PDL costituzionale'
 };
+
+// Link ufficiali Camera costruiti dagli URI LOD già presenti nei dati:
+// nessuno scraping, solo endpoint già usati dalla pipeline (vedi docs/fonti.md).
+function schedaDeputatoUrl(deputatoUri) {
+  const m = /\/d(\d+)_\d+$/.exec(deputatoUri || '');
+  if (!m) return null;
+  return `https://documenti.camera.it/apps/commonServices/getDocumento.ashx?sezione=deputati&tipoDoc=schedaDeputato&idLegislatura=19&idPersona=${m[1]}&webType=Normale`;
+}
+function schedaGruppoUrl(gruppoUri) {
+  return gruppoUri ? gruppoUri.replace('http://', 'https://') : null;
+}
+function resocontoUrl(idSeduta, ancora) {
+  // Il link via documenti.camera.it/getDocumento.ashx (usato per lo scraping,
+  // vedi src/banchi/sources/resoconto_stenografico.py) fa un redirect che
+  // perde il frammento #ancora. Si linka invece direttamente alla pagina
+  // camera.it di destinazione, che lo conserva e scrolla al paragrafo giusto
+  // (verificato in browser).
+  return `https://www.camera.it/leg19/410?idSeduta=${idSeduta}&tipo=stenografico#${ancora}`;
+}
 
 class Component extends DCLogic {
   state = {
@@ -418,6 +450,8 @@ class Component extends DCLogic {
           const isLong = testo.length > 520;
           const expanded = !!this.state.expanded[it.ancora];
           const c = isProc ? null : this.groupColor(it.gruppo_sigla);
+          const deputatoUrl = schedaDeputatoUrl(it.deputato_uri);
+          const gruppoUrl = schedaGruppoUrl(it.gruppo_uri);
           return {
             ancora: it.ancora,
             isProc, isMerito: !isProc,
@@ -429,7 +463,10 @@ class Component extends DCLogic {
             textShort: testo.length > 140 ? testo.slice(0, 140).trim() + '…' : testo,
             displayText: isLong && !expanded ? testo.slice(0, 420).trim() + '…' : testo,
             isLong, toggleLabel: expanded ? 'Mostra meno' : 'Leggi tutto',
-            toggleExpand: () => this.toggleExpand(it.ancora)
+            toggleExpand: () => this.toggleExpand(it.ancora),
+            deputatoUrl, hasDeputatoUrl: !!deputatoUrl, noDeputatoUrl: !deputatoUrl,
+            gruppoUrl, hasGruppoUrl: !!gruppoUrl, noGruppoUrl: !gruppoUrl,
+            resocontoUrl: resocontoUrl(it.id_seduta, it.ancora)
           };
         });
         return {

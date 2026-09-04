@@ -125,6 +125,13 @@ di regia come "Applausi") per il ruolo dell'oratore. Ora ancorato
 correttamente. Dati rigenerati per tutti gli atti. Vedi
 [docs/decisioni.md](docs/decisioni.md), 2026-09-04.
 
+Tre link ufficiali Camera aggiunti a ogni turno di merito in `web/`
+(2026-09-04): scheda del deputato, scheda del gruppo, paragrafo esatto nel
+resoconto stenografico. Richiesto un nuovo campo `gruppo_uri` in
+`Intervento`/`camera_lod.py` (il resto derivava da dati già presenti) e la
+rigenerazione dei 16 JSON di `web/data/`. Dettagli e i pattern URL verificati
+in [docs/decisioni.md](docs/decisioni.md), 2026-09-04.
+
 **Nota nota e accettata, non un bug:** alcuni interventi compaiono due volte
 di fila nello sviluppo cronologico. Verificato che è il dato ufficiale
 stesso a duplicarli (due nodi `discussione` distinti nel grafo LOD puntano

@@ -31,6 +31,7 @@ def sviluppo_atto(numero: str) -> list[Intervento]:
                 ancora=r["ancora"], id_seduta=id_seduta,
                 data=r.get("data") or "", deputato_uri=r.get("dep"),
                 deputato_nome=r.get("nome"), gruppo_sigla=r.get("gruppo_sigla"),
+                gruppo_uri=r.get("gruppo_uri"),
             )
             if t:
                 iv.oratore = t["oratore"]

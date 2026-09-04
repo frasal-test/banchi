@@ -445,3 +445,42 @@ consecutive per atto sui 16 atti generati; assente solo su C. 2397 e C. 75.
 degli interventi (non solo la lettura cronologica), la duplicazione va
 trattata esplicitamente — es. deduplica per ancora a valle, con una nota
 che dichiara quale copia si è tenuta e perché.
+
+---
+
+## 2026-09-04 — Tre link ufficiali Camera nella pagina atto di `web/`
+
+**Decisione.** Ogni turno di merito in `web/index.html` linka ora, quando
+disponibile: (1) la scheda personale del deputato, (2) la scheda del gruppo,
+(3) il paragrafo esatto nel resoconto stenografico. Tutti e tre costruiti da
+URI già presenti (o resi presenti) nei dati, nessuno scraping nuovo.
+
+**Deputato.** `deputato_uri` (LOD, es. `.../deputato.rdf/d307857_19`) contiene
+già l'id numerico Camera. Verificato in browser che
+`documenti.camera.it/apps/commonServices/getDocumento.ashx?sezione=deputati&tipoDoc=schedaDeputato&idLegislatura=19&idPersona={id}&webType=Normale`
+(stesso dominio già usato per i resoconti) fa redirect esatto alla scheda
+personale umana su camera.it. Nessuna modifica alla pipeline: il campo
+c'era già.
+
+**Gruppo.** `?gruppo` era già interrogato dalla SPARQL in `camera_lod.py` ma
+scartato — solo `dcterms:alternative` (la sigla) veniva tenuto. Aggiunto
+`gruppo_uri` a `Intervento`, propagato da `interventi_atto()` /
+`sviluppo_atto()`, e tutti i 16 JSON di `web/data/` rigenerati con
+`scripts/genera_dati_web.py`. Il link punta alla pagina LOD del gruppo su
+dati.camera.it (stesso stile già in uso per "apri scheda atto"): niente id
+interno Camera noto per un link diretto a una scheda gruppo umana.
+
+**Resoconto (deep link al paragrafo).** `id_seduta` + `ancora` erano già nei
+dati. Il link ovvio via `documenti.camera.it/getDocumento.ashx` **non
+funziona per il deep-link**: verificato che il suo redirect perde il
+frammento `#ancora`, atterrando sulla pagina della seduta senza scroll. Si
+linka invece direttamente a `www.camera.it/leg19/410?idSeduta={id}&tipo=stenografico#{ancora}`
+(la destinazione finale di quel redirect), che conserva il frammento e
+scrolla al paragrafo giusto — verificato che l'id del frammento corrisponde
+esattamente al turno atteso.
+
+**Cosa la renderebbe sbagliata.** Il path `/leg19/410` per il resoconto e la
+struttura dell'URL `schedaDeputato` sono pattern osservati, non documentati
+formalmente da camera.it: un cambio di piattaforma sul sito lato "umano"
+(non sugli endpoint di `documenti.camera.it` usati per lo scraping) li
+romperebbe senza preavviso. Da ricontrollare se compaiono link rotti.

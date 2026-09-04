@@ -16,6 +16,7 @@ class Intervento:
     deputato_uri: str | None
     deputato_nome: str | None
     gruppo_sigla: str | None
+    gruppo_uri: str | None = None
     oratore: str = ""        # come compare in Aula (es. "PRESIDENTE" se presiede)
     ruolo: str = ""
     presidenza: bool = False

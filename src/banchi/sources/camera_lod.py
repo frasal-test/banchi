@@ -34,7 +34,8 @@ def _ancora_e_seduta(rel: str) -> tuple[str, str] | tuple[None, None]:
 def interventi_atto(numero: str) -> list[dict]:
     """Righe grezze (metadati LOD) degli interventi d'Aula di un atto Camera.
 
-    Ogni riga ha: ancora, id_seduta, data, dep (uri), nome, gruppo_sigla.
+    Ogni riga ha: ancora, id_seduta, data, dep (uri), nome, gruppo_sigla,
+    gruppo_uri.
     Non contiene il testo pronunciato: quello va preso dal resoconto
     stenografico della seduta (vedi resoconto_stenografico.py).
     """
@@ -78,6 +79,7 @@ SELECT DISTINCT ?dep ?gruppo ?sigla ?inizio ?fine WHERE {{
             "ancora": ancora, "id_seduta": id_seduta,
             "data": i.get("data"), "dep": i.get("dep"), "nome": i.get("nome"),
             "gruppo_sigla": None,
+            "gruppo_uri": None,
         }
         dep, data = i.get("dep"), i.get("data")
         if dep and data:
@@ -85,6 +87,7 @@ SELECT DISTINCT ?dep ?gruppo ?sigla ?inizio ?fine WHERE {{
                 fine = a.get("fine") or "99999999"
                 if a["inizio"] <= data <= fine:
                     riga["gruppo_sigla"] = a.get("sigla")
+                    riga["gruppo_uri"] = a.get("gruppo")
                     break
         righe.append(riga)
     return righe
