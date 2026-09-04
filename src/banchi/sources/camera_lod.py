@@ -31,6 +31,45 @@ def _ancora_e_seduta(rel: str) -> tuple[str, str] | tuple[None, None]:
     return ancora, id_seduta
 
 
+def mappa_adesioni() -> dict[str, list[dict]]:
+    """Appartenenza ai gruppi per deputato, per intervallo di date.
+
+    Interrogazione indipendente da qualsiasi nodo `intervento`: è per
+    persona, non per turno. Serve sia a `interventi_atto()` sia a risolvere
+    il gruppo dei turni che il LOD non collega a nessun intervento (vedi
+    `gruppo_per_data()` e docs/decisioni.md, 2026-09-04 — "Turni recuperati
+    dal resoconto").
+    """
+    adesioni = sparql(f"""
+PREFIX dcterms: <http://purl.org/dc/terms/>
+SELECT DISTINCT ?dep ?gruppo ?sigla ?inizio ?fine WHERE {{
+  ?dep rdf:type ocd:deputato .
+  ?dep ocd:rif_leg <{LEG}> .
+  ?dep ocd:aderisce ?ad .
+  ?ad ocd:rif_gruppoParlamentare ?gruppo .
+  ?ad ocd:startDate ?inizio .
+  OPTIONAL {{ ?ad ocd:endDate ?fine }}
+  OPTIONAL {{ ?gruppo dcterms:alternative ?sigla }}
+}}
+""")
+    per_dep = defaultdict(list)
+    for a in adesioni:
+        per_dep[a["dep"]].append(a)
+    return per_dep
+
+
+def gruppo_per_data(per_dep: dict[str, list[dict]], dep: str | None,
+                     data: str | None) -> tuple[str | None, str | None]:
+    """Sigla e uri del gruppo a cui aderiva `dep` alla data `data`."""
+    if not dep or not data:
+        return None, None
+    for a in per_dep.get(dep, []):
+        fine = a.get("fine") or "99999999"
+        if a["inizio"] <= data <= fine:
+            return a.get("sigla"), a.get("gruppo")
+    return None, None
+
+
 def interventi_atto(numero: str) -> list[dict]:
     """Righe grezze (metadati LOD) degli interventi d'Aula di un atto Camera.
 
@@ -54,40 +93,20 @@ SELECT DISTINCT ?disc ?data ?interv ?dep ?nome ?rel WHERE {{
 }}
 """)
 
-    adesioni = sparql(f"""
-PREFIX dcterms: <http://purl.org/dc/terms/>
-SELECT DISTINCT ?dep ?gruppo ?sigla ?inizio ?fine WHERE {{
-  ?dep rdf:type ocd:deputato .
-  ?dep ocd:rif_leg <{LEG}> .
-  ?dep ocd:aderisce ?ad .
-  ?ad ocd:rif_gruppoParlamentare ?gruppo .
-  ?ad ocd:startDate ?inizio .
-  OPTIONAL {{ ?ad ocd:endDate ?fine }}
-  OPTIONAL {{ ?gruppo dcterms:alternative ?sigla }}
-}}
-""")
-    per_dep = defaultdict(list)
-    for a in adesioni:
-        per_dep[a["dep"]].append(a)
+    per_dep = mappa_adesioni()
 
     righe = []
     for i in interventi:
         ancora, id_seduta = _ancora_e_seduta(i.get("rel", ""))
         if not ancora:
             continue
+        gruppo_sigla, gruppo_uri = gruppo_per_data(
+            per_dep, i.get("dep"), i.get("data"))
         riga = {
             "ancora": ancora, "id_seduta": id_seduta,
             "data": i.get("data"), "dep": i.get("dep"), "nome": i.get("nome"),
-            "gruppo_sigla": None,
-            "gruppo_uri": None,
+            "gruppo_sigla": gruppo_sigla,
+            "gruppo_uri": gruppo_uri,
         }
-        dep, data = i.get("dep"), i.get("data")
-        if dep and data:
-            for a in per_dep.get(dep, []):
-                fine = a.get("fine") or "99999999"
-                if a["inizio"] <= data <= fine:
-                    riga["gruppo_sigla"] = a.get("sigla")
-                    riga["gruppo_uri"] = a.get("gruppo")
-                    break
         righe.append(riga)
     return righe

@@ -47,7 +47,7 @@ def _testo_piano(frammento: str) -> str:
 
 
 _PATTERN_P = re.compile(
-    r'<p class="(intervento|interventoVirtuale)"'
+    r'<p class="(intervento|interventoVirtuale|titolo_allegato)"'
     r'(?:\s+id="([^"]*)")?[^>]*>(.*?)</p>',
     re.S,
 )
@@ -56,16 +56,34 @@ _PATTERN_P = re.compile(
 def turni_seduta(id_seduta: str) -> dict[str, dict]:
     """Turni di parola della seduta, indicizzati per ancora.
 
-    Ogni valore ha: oratore, gruppo, ruolo, presidenza, testo. Le continua-
-    zioni (interventoVirtuale) sono già accorpate al turno che aprono.
+    Ogni valore ha: oratore, gruppo, ruolo, presidenza, pubblicato_in_calce,
+    deputato_uri, testo. Le continuazioni (interventoVirtuale) sono già
+    accorpate al turno che aprono.
+
+    `deputato_uri` è ricostruito dall'idPersona nel link alla scheda
+    personale (stesso numero che compone l'uri del deputato nel LOD, vedi
+    docs/decisioni.md 2026-09-03) — indipendente dal grafo LOD: c'è anche
+    per i turni che il LOD non collega a nessun atto (vedi
+    docs/decisioni.md, 2026-09-04 — "Turni recuperati dal resoconto").
     """
     sorgente = scarica_seduta(id_seduta).read_text("utf-8", "replace")
 
     turni: dict[str, dict] = {}
     ultimo_id: str | None = None
+    # Dal titolo_allegato "TESTI DEGLI INTERVENTI DI CUI È STATA AUTORIZZATA
+    # LA PUBBLICAZIONE..." in poi, i turni non sono stati pronunciati in
+    # Aula: sono testi depositati. Strutturalmente sono <p class="intervento">
+    # identici a un turno vero — la sola differenza è questo titolo che li
+    # precede. Vedi docs/decisioni.md, 2026-09-04.
+    in_calce = False
 
     for m in _PATTERN_P.finditer(sorgente):
         classe, ident, corpo = m.group(1), m.group(2) or "", m.group(3)
+
+        if classe == "titolo_allegato":
+            in_calce = True
+            continue
+
         piano = _testo_piano(corpo)
         if not piano:
             continue
@@ -79,12 +97,15 @@ def turni_seduta(id_seduta: str) -> dict[str, dict]:
         # perché di questo parsing (due nomi per lo stesso oratore, la
         # presidenza si riconosce dall'etichetta non dall'anagrafico).
         oratore = etichetta = gruppo = ruolo = ""
+        deputato_uri = None
         a = re.search(
-            r'<a[^>]*title="Vai alla scheda personale:\s*([^"]+)"[^>]*>(.*?)</a>',
+            r'<a[^>]*href="[^"]*idPersona=(\d+)[^"]*"[^>]*'
+            r'title="Vai alla scheda personale:\s*([^"]+)"[^>]*>(.*?)</a>',
             corpo, re.S)
         if a:
-            oratore = html.unescape(a.group(1)).strip()
-            etichetta = _testo_piano(a.group(2))
+            deputato_uri = f"http://dati.camera.it/ocd/deputato.rdf/d{a.group(1)}_19"
+            oratore = html.unescape(a.group(2)).strip()
+            etichetta = _testo_piano(a.group(3))
         g = re.search(r"\(\s*<span[^>]*>([^<]{1,40})</span>\s*\)", corpo)
         if g:
             gruppo = html.unescape(g.group(1)).strip()
@@ -115,6 +136,8 @@ def turni_seduta(id_seduta: str) -> dict[str, dict]:
         turni[ident] = {
             "oratore": oratore or etichetta, "gruppo": gruppo, "ruolo": ruolo,
             "presidenza": etichetta.upper().startswith("PRESIDENT"),
+            "pubblicato_in_calce": in_calce,
+            "deputato_uri": deputato_uri,
             "paragrafi": [piano],
         }
         ultimo_id = ident

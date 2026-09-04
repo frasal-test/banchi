@@ -138,3 +138,33 @@ stesso a duplicarli (due nodi `discussione` distinti nel grafo LOD puntano
 allo stesso turno) — si è deciso di lasciarli così invece di deduplicare
 arbitrariamente. Vedi [docs/decisioni.md](docs/decisioni.md), 2026-09-04, e
 [docs/fonti.md](docs/fonti.md).
+
+Testi "autorizzati in calce" separati dal corpus discusso (2026-09-04):
+alcuni turni in coda al resoconto (dopo `<p class="titolo_allegato">`) sono
+testi depositati da un deputato e mai pronunciati in Aula, ma
+strutturalmente identici a un turno vero — venivano confusi col dibattito
+vivo. Nuovo campo `pubblicato_in_calce` in `Intervento`/
+`resoconto_stenografico.py`, propagato fino a `web/`: esclusi dalle
+statistiche per gruppo, ma mostrati nello sviluppo cronologico in un box
+distinto e marcato. Rigenerati i 16 JSON. Anche i turni di presidenza in
+`web/` sono ora espandibili per intero ("Leggi tutto") invece di troncati a
+140 caratteri sempre — restano esclusi dalle statistiche, cambia solo la
+leggibilità. Dettagli in [docs/decisioni.md](docs/decisioni.md), 2026-09-04.
+
+Turni recuperati dal resoconto (2026-09-04): alcuni turni pronunciati in
+Aula non hanno nessun nodo `ocd:intervento` nel grafo LOD — non un
+collegamento mancante verso un atto, un buco vero nel dato ufficiale
+(verificato su C. 705, seduta 0028: il turno di Ciriani che pone la
+questione di fiducia). `sviluppo_atto()` li recupera ora quando cadono nello
+stesso blocco tit/sub del resoconto di un turno già confermato dal LOD per
+quell'atto, usando `deputato_uri` ricostruito dall'idPersona nel resoconto
+stesso (nuovo, in `resoconto_stenografico.py`) e il gruppo risolto per data
+via `camera_lod.mappa_adesioni()` (nuova, indipendente dal nodo
+`intervento`). Marcati `dedotto=True`: nella pipeline di produzione, quindi
+vale per tutti gli atti, presenti e futuri, non solo per il 705. In `web/`
+hanno lo stesso trattamento visivo di un turno confermato, con la sola
+differenza di un'etichetta piccola e muta ("non confermato dal LOD") — sono
+dibattito vero, non vanno percepiti come turni da poter saltare. Portata
+misurata non trascurabile: il totale interventi per atto è più che
+raddoppiato in diversi casi dopo la rigenerazione dei 16 JSON (C. 705:
+1030 → 2042). Dettagli in [docs/decisioni.md](docs/decisioni.md), 2026-09-04.

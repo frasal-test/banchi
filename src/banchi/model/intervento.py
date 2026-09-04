@@ -20,5 +20,7 @@ class Intervento:
     oratore: str = ""        # come compare in Aula (es. "PRESIDENTE" se presiede)
     ruolo: str = ""
     presidenza: bool = False
+    pubblicato_in_calce: bool = False  # testo depositato, autorizzato in calce: non pronunciato in Aula
     testo: str = ""
     trovato: bool = False    # False se l'ancora LOD non ha un turno corrispondente nel resoconto
+    dedotto: bool = False    # True se il turno non ha un nodo LOD proprio: attribuito all'atto per inferenza (stesso blocco tit/sub di un turno confermato), non dichiarato da Camera

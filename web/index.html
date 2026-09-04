@@ -131,7 +131,7 @@ html, body { min-height: 100%; }
 
   <sc-if value="{{ hasSviluppo }}" hint-placeholder-val="{{ false }}">
     <h2>Chi ha parlato, per gruppo</h2>
-    <p class="text-muted" style="font-size:13px;">Quota di interventi e caratteri pronunciati nei turni di merito (esclusa la presidenza).</p>
+    <p class="text-muted" style="font-size:13px;">Quota di interventi e caratteri pronunciati nei turni di merito (esclusa la presidenza e i testi autorizzati in calce, mai pronunciati in Aula).</p>
     <div style="display:flex;height:14px;margin:var(--space-4) 0 var(--space-3);overflow:hidden;">
       <sc-for list="{{ groupStats }}" as="g" hint-placeholder-count="4">
         <div style="height:100%;background:{{ g.bg }};width:{{ g.pctWidth }}%;" title="{{ g.sigla }}"></div>
@@ -173,7 +173,30 @@ html, body { min-height: 100%; }
               <span style="flex:none;padding-top:1px;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="22" x2="21" y2="22"></line><line x1="6" y1="18" x2="6" y2="11"></line><line x1="10" y1="18" x2="10" y2="11"></line><line x1="14" y1="18" x2="14" y2="11"></line><line x1="18" y1="18" x2="18" y2="11"></line><polygon points="12 2 20 8 4 8"></polygon></svg>
               </span>
-              <div>{{ it.oratore }} — {{ it.textShort }}</div>
+              <div style="flex:1;min-width:0;">
+                {{ it.oratore }} — {{ it.displayText }}
+                <sc-if value="{{ it.isLong }}" hint-placeholder-val="{{ false }}">
+                  <button class="btn btn-ghost" onClick="{{ it.toggleExpand }}" style="font-size:11px;padding:2px 0;font-style:normal;opacity:.85;">{{ it.toggleLabel }}</button>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ it.isCalce }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:var(--space-3);padding:var(--space-4);border:1px dashed var(--color-divider);background:color-mix(in srgb, currentColor 4%, transparent);margin:var(--space-3) 0;">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+                  <span style="font-weight:800;font-family:var(--font-heading);">{{ it.oratore }}</span>
+                  <sc-if value="{{ it.hasRuolo }}" hint-placeholder-val="{{ false }}"><span class="text-muted" style="font-size:12px;">{{ it.ruolo }}</span></sc-if>
+                  <span class="tag tag-neutral">Testo autorizzato in calce — non pronunciato in Aula</span>
+                </div>
+                <p style="font-size:14px;line-height:1.6;margin:0;">{{ it.displayText }}</p>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                  <sc-if value="{{ it.isLong }}" hint-placeholder-val="{{ false }}">
+                    <button class="btn btn-ghost" onClick="{{ it.toggleExpand }}" style="font-size:12px;padding:4px 0;">{{ it.toggleLabel }}</button>
+                  </sc-if>
+                  <a href="{{ it.resocontoUrl }}" target="_blank" rel="noopener" class="text-muted" style="font-size:12px;">Vedi nel resoconto ufficiale</a>
+                </div>
+              </div>
             </div>
           </sc-if>
           <sc-if value="{{ it.isMerito }}" hint-placeholder-val="{{ true }}">
@@ -193,6 +216,9 @@ html, body { min-height: 100%; }
                   </sc-if>
                   <sc-if value="{{ it.noGruppoUrl }}" hint-placeholder-val="{{ true }}">
                     <span class="tag" style="background:{{ it.bg }};color:{{ it.fg }};">{{ it.groupLabel }}</span>
+                  </sc-if>
+                  <sc-if value="{{ it.isDedotto }}" hint-placeholder-val="{{ false }}">
+                    <span class="text-muted" title="Il grafo LOD ufficiale non collega questo turno a questo atto: testo e oratore vengono dal resoconto stenografico, l'attribuzione al provvedimento è un'inferenza nostra (stesso blocco del resoconto di un turno confermato)." style="font-size:11px;cursor:help;border-bottom:1px dotted currentColor;">non confermato dal LOD</span>
                   </sc-if>
                 </div>
                 <p style="font-size:14px;line-height:1.6;margin:0;">{{ it.displayText }}</p>
@@ -409,7 +435,7 @@ class Component extends DCLogic {
 
     let groupStats = [], seduteChips = [], sedute = [];
     if (hasSviluppo) {
-      const merito = sviluppo.interventi.filter(it => !it.presidenza);
+      const merito = sviluppo.interventi.filter(it => !it.presidenza && !it.pubblicato_in_calce);
       const totals = {};
       merito.forEach(it => {
         const key = it.gruppo_sigla || 'GOVERNO';
@@ -446,15 +472,17 @@ class Component extends DCLogic {
         if (textQ) items = items.filter(it => (it.testo || '').toLowerCase().includes(textQ) || (it.oratore || '').toLowerCase().includes(textQ));
         const mapped = items.map(it => {
           const isProc = !!it.presidenza;
+          const isCalce = !isProc && !!it.pubblicato_in_calce;
           const testo = it.testo || '';
           const isLong = testo.length > 520;
           const expanded = !!this.state.expanded[it.ancora];
-          const c = isProc ? null : this.groupColor(it.gruppo_sigla);
+          const c = (isProc || isCalce) ? null : this.groupColor(it.gruppo_sigla);
           const deputatoUrl = schedaDeputatoUrl(it.deputato_uri);
           const gruppoUrl = schedaGruppoUrl(it.gruppo_uri);
           return {
             ancora: it.ancora,
-            isProc, isMerito: !isProc,
+            isProc, isCalce, isMerito: !isProc && !isCalce,
+            isDedotto: !!it.dedotto,
             oratore: it.oratore,
             ruolo: it.ruolo || '',
             hasRuolo: !!it.ruolo,

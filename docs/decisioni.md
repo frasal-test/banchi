@@ -448,6 +448,119 @@ che dichiara quale copia si è tenuta e perché.
 
 ---
 
+## 2026-09-04 — Testi in calce marcati e tolti dal corpus, non scartati
+
+**Osservazione (seduta 0028, C. 705).** In calce ad alcune sedute compaiono
+testi introdotti da `<p class="titolo_allegato">` con dicitura tipo "TESTI
+DEGLI INTERVENTI DI CUI È STATA AUTORIZZATA LA PUBBLICAZIONE IN CALCE AL
+RESOCONTO STENOGRAFICO DELLA SEDUTA ODIERNA". Sono testi depositati da un
+deputato e mai pronunciati in Aula, ma strutturalmente identici a un turno
+vero: stesso `<p class="intervento">`, stesso link alla scheda personale,
+stesso `<em>ruolo</em>`. Il parser non li distingueva in alcun modo dal
+dibattito vivo — finivano nel corpus di analisi come se fossero stati
+oggetto di replica in tempo reale, il che è falso per definizione (nessuno
+può rispondere a un testo che non è stato detto).
+
+**Decisione.** `turni_seduta()` traccia quando l'ultimo `titolo_allegato`
+incontrato scorrendo il documento marca l'inizio della sezione "in calce" e
+imposta `pubblicato_in_calce=True` su tutti i turni successivi (il flag non
+torna mai a `False` entro la stessa seduta: la sezione è sempre in coda al
+resoconto). Il campo arriva fino a `Intervento` e ai JSON di `web/`. Il
+frontend li **esclude** dal calcolo "chi ha parlato, per gruppo" (assieme
+alla presidenza) ma li **mostra** nello sviluppo cronologico, in un box
+distinto con l'etichetta "Testo autorizzato in calce — non pronunciato in
+Aula": visibili, non silenziati, ma marcati come out-of-band rispetto al
+dibattito.
+
+**Cosa la renderebbe sbagliata.** Il segnale usato è posizionale (tutto ciò
+che segue l'ultimo `titolo_allegato` della seduta), non un attributo esplicito
+sul singolo turno. Se una seduta avesse *altri* `titolo_allegato` non legati
+a testi depositati (es. un secondo blocco di ordine del giorno dopo gli
+allegati), il flag si sporcherebbe. Da verificare su altre sedute quando se
+ne presenta l'occasione.
+
+---
+
+## 2026-09-04 — Presidenza leggibile per intero, non più tagliata a 140 caratteri
+
+**Osservazione.** In `web/index.html` i turni di presidenza erano sempre
+troncati a `textShort` (140 caratteri, nessuna espansione), indipendentemente
+dalla lunghezza — conseguenza diretta della decisione del 2026-08-05 ("il
+rumore è la presidenza, non la brevità"). Ma quella decisione riguardava
+l'unità di misura dell'analisi argomentativa, non implicava che un intervento
+presidenziale chiarificatore (es. spiega cosa sta succedendo in aula, un
+punto di procedura non banale) dovesse restare illeggibile in UI.
+
+**Decisione.** I turni di presidenza usano ora lo stesso meccanismo di
+espansione ("Leggi tutto") già in uso per i turni di merito, invece del solo
+`textShort`. Restano visivamente distinti (corsivo, icona, opacità ridotta)
+e restano esclusi dalle statistiche per gruppo: cambia solo la leggibilità,
+non il perimetro dell'analisi.
+
+---
+
+## 2026-09-04 — Turni recuperati dal resoconto
+
+**Origine.** Il turno di Luca Ciriani che pone la questione di fiducia su
+C. 705 (seduta 0028, `tit00050.sub00050.int00020`) non ha nessun nodo
+`ocd:intervento` nel grafo LOD — verificato interrogando il SPARQL endpoint
+senza filtro per atto: l'ancora non esiste in nessun `dc:relation` per
+quella seduta. Non è un collegamento mancante verso il 705: è un turno che
+Camera non ha mai messo nel grafo, pur avendolo pubblicato per intero nel
+resoconto stenografico (fonte già autorizzata, non scraping — vedi
+`resoconto_stenografico.py`).
+
+**Portata misurata (prima di intervenire).** Confrontando l'inventario
+completo dei turni di `turni_seduta()` con l'inventario completo dei nodi
+`intervento` del LOD per la stessa seduta (qualunque atto), il fenomeno non
+è raro: sulle 3 sedute di C. 705, seduta 0024 zero buchi, seduta 0028 (quella
+di Ciriani) 12 turni non-presidenza orfani, seduta 0029 (seduta fiume
+ostruzionistica, già nota per l'anomalia — vedi la voce del 2026-08-05) ben
+217 turni non-presidenza orfani, alcuni di migliaia di caratteri. Un buco
+puntuale e uno sistematico dentro lo stesso atto.
+
+**Decisione.** `sviluppo_atto()` recupera un turno orfano solo se cade nello
+stesso blocco tit/sub del resoconto di un turno già confermato dal LOD per
+quell'atto (mai un'attribuzione a un atto che in quella seduta non ha nessun
+turno confermato). Per farlo:
+- `resoconto_stenografico.py` ora cattura anche `idPersona` dal link alla
+  scheda personale (era già nell'HTML, veniva scartato) e ricostruisce
+  `deputato_uri` — indipendente da qualsiasi nodo LOD, funziona anche per i
+  turni orfani.
+- `camera_lod.py` espone `mappa_adesioni()` / `gruppo_per_data()`
+  separatamente da `interventi_atto()`: la tabella deputato → gruppo per
+  data è per persona, non per turno, quindi si può interrogare anche senza
+  un nodo `intervento`.
+- Ogni turno recuperato così porta `dedotto=True` in `Intervento`: è
+  un'inferenza nostra sulla struttura del documento (stesso blocco tit/sub),
+  non un dato che Camera dichiara esplicitamente. Il meccanismo è nella
+  pipeline di produzione, quindi si applica automaticamente a tutti gli
+  atti — presenti e futuri — non solo al 705.
+
+**In `web/`.** I turni recuperati restano indistinguibili nel trattamento
+visivo dai turni confermati (stessa barra colorata, stesso spazio, stessa
+espansione) — sono dibattito vero, non testi in calce da isolare. La sola
+differenza è un'etichetta piccola e muta ("non confermato dal LOD", con
+tooltip) accanto al tag di gruppo: visibile a chi vuole verificare, non un
+segnale che inviti a saltare il turno. Contano nelle statistiche per gruppo
+come qualunque altro turno di merito.
+
+**Effetto sul catalogo.** Rigenerati i 16 JSON: il totale interventi per
+atto è più che raddoppiato in diversi casi (C. 705: 1030 → 2042; include
+presidenza recuperata, esclusa dalle statistiche come sempre). Il numero
+"interventi" mostrato nell'indice (`catalogo_atti.json`) resta quello
+dichiarato dal LOD e non è stato toccato: sono due misure diverse, non un
+'errore da correggere' l'una rispetto all'altra.
+
+**Cosa la renderebbe sbagliata.** Il segnale è posizionale (stesso blocco
+tit/sub), non un attributo esplicito sul turno. Se un blocco tit/sub
+contenesse in realtà due argomenti diversi (es. un cambio di atto a metà
+sub-titolo senza un nuovo `tit`/`sub` a segnarlo), un turno estraneo
+finirebbe attribuito per errore. Non riscontrato finora, ma da tenere
+d'occhio se compaiono attribuzioni palesemente fuori tema.
+
+---
+
 ## 2026-09-04 — Tre link ufficiali Camera nella pagina atto di `web/`
 
 **Decisione.** Ogni turno di merito in `web/index.html` linka ora, quando
