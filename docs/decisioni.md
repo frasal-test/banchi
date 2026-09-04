@@ -378,3 +378,35 @@ atti), 16 file JSON da 0.7-2 MB l'uno committati in `web/data/` (~14 MB
 totali oggi) diventa un problema di dimensione del repo prima che di
 tempo di generazione — a quel punto serve un backend che serva i dati a
 richiesta invece di file statici pre-generati.
+
+---
+
+## 2026-09-04 — Il campo "ruolo" del resoconto va ancorato subito dopo `</a>`
+
+**Decisione.** In `resoconto_stenografico.py` (`turni_seduta()`) il ruolo
+dell'oratore (Relatore, Sottosegretario, Ministro...) non si cerca più con
+`re.search(r"<em>...</em>", corpo)` su tutto il corpo dell'intervento, ma
+con un `re.match` ancorato subito dopo `</a>` (con l'eventuale gruppo
+parlamentare in mezzo). Un `<em>` che inizia con `(` (note di regia come
+"Applausi", "Commenti") non conta come ruolo.
+
+**Perché.** Il resoconto usa `<em>` anche per l'enfasi tipografica dentro
+il discorso stesso (forestierismi, tecnicismi, citazioni di articoli come
+"96-bis", note di regia). Un `re.search` senza ancora prende il primo
+`<em>` che trova ovunque nel corpo — quasi sempre non è un ruolo, perché la
+maggioranza dei deputati non ne ha uno. Segnalato dall'utente: parole senza
+senso ("rave", "Guinness", "bis", "media"...) tra il nome e il tag di
+gruppo nella pagina di un atto.
+
+**Verificato.** Confronto sui 16 atti generati: i valori distinti del campo
+ruolo passano da 439 (391 rumore) a 49 (1 solo falso sospetto nel filtro di
+verifica, in realtà un ruolo genuino — "Vicepresidente della V
+Commissione"). Nessun impatto sul tasso di aggancio testo-metadati (8497
+interventi, 0 mancanti, invariato).
+
+**Cosa la renderebbe sbagliata.** Un caso osservato ma non coperto: più
+relatori nominati insieme prima del tag di ruolo comune (es. "OTTAVIANI,
+PELLA e TRANCASSINI, <em>Relatori.</em>") — l'ancora richiede adiacenza
+stretta, quindi qui il ruolo resta vuoto invece di essere attribuito a
+tutti e tre. Raro (un solo caso trovato nei dati scaricati finora); da
+rivedere se ricorre più spesso man mano che si generano altri atti.

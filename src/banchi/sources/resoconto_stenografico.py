@@ -88,9 +88,20 @@ def turni_seduta(id_seduta: str) -> dict[str, dict]:
         g = re.search(r"\(\s*<span[^>]*>([^<]{1,40})</span>\s*\)", corpo)
         if g:
             gruppo = html.unescape(g.group(1)).strip()
-        r = re.search(r"<em>([^<]{1,60})</em>", corpo)
-        if r:
-            ruolo = html.unescape(r.group(1)).strip()
+        # Il ruolo, quando c'è, sta subito dopo </a> (con l'eventuale gruppo
+        # in mezzo) — mai più in là. Un re.search senza ancora qui prende il
+        # primo <em> di enfasi nel discorso (forestierismi, "96-bis", note
+        # di regia come "(Applausi...)") e lo scambia per un ruolo: per la
+        # maggioranza dei deputati, che un ruolo non ce l'hanno, è rumore.
+        if a:
+            r = re.match(
+                r"\s*(?:\(\s*<span[^>]*>[^<]{1,40}</span>\s*\))?\s*[,.]?\s*"
+                r"<em>([^<]{1,60})</em>",
+                corpo[a.end():])
+            if r:
+                ruolo = html.unescape(r.group(1)).strip().lstrip(",").strip()
+                if ruolo.startswith("("):
+                    ruolo = ""
 
         if etichetta:
             taglio = re.match(
