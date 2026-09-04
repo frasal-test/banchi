@@ -597,3 +597,52 @@ struttura dell'URL `schedaDeputato` sono pattern osservati, non documentati
 formalmente da camera.it: un cambio di piattaforma sul sito lato "umano"
 (non sugli endpoint di `documenti.camera.it` usati per lo scraping) li
 romperebbe senza preavviso. Da ricontrollare se compaiono link rotti.
+
+---
+
+## 2026-09-04 — Riassunti dei turni: presentazione, soglia e persistenza
+
+**Decisione.** Introduciamo riassunti generati da un LLM locale (Ollama) per
+i turni di merito più lunghi. Tre scelte, discusse in chat e chiuse qui:
+
+1. **Presentazione UI (ibrida).** Sotto i 250 parole: nessun riassunto, solo
+   il testo integrale, nessuna UI aggiuntiva. Sopra soglia: il riassunto
+   (200-300 parole, testo integrale del riassunto, **non** un teaser
+   troncato) è sempre visibile; il testo ufficiale resta sempre
+   raggiungibile sotto, dietro un toggle esplicito ("Leggi il testo
+   integrale", ad accordion — il riassunto non sparisce quando si apre
+   l'originale). Etichetta obbligatoria sopra il riassunto: "Riassunto
+   generato da LLM `<nome modello>`". Motivo dell'etichetta: coerente col
+   vincolo identitario "non è un fact-checker" — il riassunto è un ausilio
+   di lettura, il testo ufficiale resta la fonte primaria anche quando è
+   nascosto dietro al toggle.
+2. **Persistenza: niente DB.** Cache su disco in `data/raw/riassunti/`,
+   stesso pattern già in uso per i resoconti grezzi ("le sedute chiuse non
+   cambiano, si scaricano una volta sola"). Chiave = id turno + hash del
+   testo, non solo id: un testo sorgente che cambia (es. un futuro bugfix di
+   parsing, come già successo per `ruolo` — vedi voce sopra) deve invalidare
+   il riassunto vecchio invece di lasciarlo silenziosamente disallineato.
+3. **Script separato dalla pipeline dati.** `scripts/genera_riassunti.py`
+   (da scrivere) genera e cachea i riassunti mancanti o invalidati chiamando
+   l'LLM; `scripts/genera_dati_web.py` si limita a leggere la cache e
+   iniettare il campo nei JSON finali — mai una chiamata LLM dentro lo
+   script che genera i dati per il sito.
+
+**Perché.** Il DB Oracle è esplicitamente "in prospettiva, non ora" (vedi
+Stack in CLAUDE.md): introdurlo solo per i riassunti sarebbe sproporzionato
+rispetto all'attuale architettura (nessun backend, JSON statici su Vercel).
+La soglia è in parole e non in "righe" (ambiguo: una riga dipende dal
+rendering — font, larghezza colonna — non è una misura stabile nei dati):
+sotto soglia un riassunto di 200-300 parole sarebbe grande quanto
+l'originale, quindi inutile.
+
+**Stato.** Decisione di design chiusa. Implementazione non ancora iniziata:
+in attesa del nome esatto del modello Ollama da usare prima di scrivere
+`scripts/genera_riassunti.py`. Primo test previsto su **C. 1114 per intero**
+(343 interventi), non un sottoinsieme — scelta esplicita per vedere il
+risultato completo in un solo giro invece che parziale.
+
+**Cosa la renderebbe sbagliata.** Se il volume di interventi sopra soglia
+richiedesse rigenerazioni frequenti (es. cambio modello ricorrente), la
+cache a un file per turno può diventare scomoda da gestire in bulk — da
+rivedere quando si vede il volume reale generato su C. 1114.

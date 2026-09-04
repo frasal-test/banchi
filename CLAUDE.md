@@ -68,6 +68,10 @@ Python. Nessuna dipendenza inutile — se sta in stdlib, si usa stdlib.
 In prospettiva, **non ora**: Oracle ADB su database dedicato (separato da
 altri progetti) e annotazione via Anthropic API.
 
+Riassunti dei turni: LLM locale (Ollama), non API cloud. Cache su disco in
+`data/raw/riassunti/`, niente DB. Vedi
+[docs/decisioni.md](docs/decisioni.md), 2026-09-04.
+
 ## Convenzioni di repo
 
 - `spike/` — codice usa e getta per verificare ipotesi sui dati. **Mai
@@ -168,3 +172,15 @@ dibattito vero, non vanno percepiti come turni da poter saltare. Portata
 misurata non trascurabile: il totale interventi per atto è più che
 raddoppiato in diversi casi dopo la rigenerazione dei 16 JSON (C. 705:
 1030 → 2042). Dettagli in [docs/decisioni.md](docs/decisioni.md), 2026-09-04.
+
+Riassunti dei turni (design chiuso, implementazione non ancora iniziata,
+2026-09-04): per i turni di merito ≥250 parole, un riassunto integrale
+(200-300 parole, non un teaser) generato da LLM locale (Ollama) sarà sempre
+visibile in `web/`, con il testo ufficiale sempre raggiungibile sotto via
+toggle ("Leggi il testo integrale"); sotto soglia nessun riassunto e nessuna
+UI aggiuntiva. Persistenza a cache su disco (`data/raw/riassunti/`, chiave
+id turno + hash del testo), niente DB — coerente con "Oracle ADB in
+prospettiva, non ora" (vedi Stack sopra). In attesa del nome del modello
+Ollama prima di scrivere `scripts/genera_riassunti.py`. Primo test previsto
+su C. 1114 per intero (343 interventi), non un sottoinsieme. Vedi
+[docs/decisioni.md](docs/decisioni.md), 2026-09-04.
