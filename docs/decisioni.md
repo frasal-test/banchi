@@ -410,3 +410,38 @@ PELLA e TRANCASSINI, <em>Relatori.</em>") — l'ancora richiede adiacenza
 stretta, quindi qui il ruolo resta vuoto invece di essere attribuito a
 tutti e tre. Raro (un solo caso trovato nei dati scaricati finora); da
 rivedere se ricorre più spesso man mano che si generano altri atti.
+
+---
+
+## 2026-09-04 — Interventi duplicati: si lasciano, sono nel dato ufficiale
+
+**Osservazione.** In diversi atti, uno stesso intervento (stesso testo,
+stesso oratore) compare due volte di fila nello sviluppo cronologico.
+Segnalato dall'utente insieme al problema del ruolo (sopra).
+
+**Verificato — non è un nostro bug.** Su C. 1114 (seduta 0114, intervento di
+Dario Carotenuto): la query SPARQL in `camera_lod.py` (`interventi_atto()`,
+già `SELECT DISTINCT`) restituisce correttamente due righe *genuinamente
+distinte* — `?interv` = `in19_679053` legato a `?disc` =
+`disIdDib162653_19`, e `?interv` = `in19_678864` legato a `?disc` =
+`disIdDib162640_19` — che condividono però la stessa `dc:relation`, cioè la
+stessa ancora nel resoconto stenografico. È dati.camera.it stesso a
+registrare lo stesso turno di parola sotto due nodi `discussione` diversi
+(probabile causa: la seduta discute più provvedimenti collegati e la Camera
+modella la cosa come due "discussioni" separate che puntano allo stesso
+turno reale). `DISTINCT` funziona correttamente qui: non c'è nulla da
+deduplicare a livello di riga SPARQL, la duplicazione è nel grafo.
+
+**Decisione.** Non si deduplica in `sviluppo_atto()`. A differenza del bug
+sul ruolo (quello sì un errore nostro di parsing, corretto sopra), qui
+scartare una delle due copie significherebbe scegliere arbitrariamente
+quale "discussione" ufficiale ignorare, senza un criterio che la fonte
+stessa fornisca.
+
+**Portata misurata.** Da 5 (C. 1483) a 128 (C. 705) coppie duplicate
+consecutive per atto sui 16 atti generati; assente solo su C. 2397 e C. 75.
+
+**Cosa la renderebbe sbagliata.** Se in futuro serve un conteggio esatto
+degli interventi (non solo la lettura cronologica), la duplicazione va
+trattata esplicitamente — es. deduplica per ancora a valle, con una nota
+che dichiara quale copia si è tenuta e perché.

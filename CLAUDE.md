@@ -47,8 +47,8 @@ Dettaglio completo di endpoint, pattern URI e licenze in [docs/fonti.md](docs/fo
 
 1. Struttura e iter — SPARQL endpoint `https://dati.camera.it/sparql`,
    ontologia OCD, licenza CC-BY.
-2. Testo degli interventi — web service resoconti stenografici
-   `https://documenti.camera.it/apps/resoconto/elabora.asmx`.
+2. Testo degli interventi — resoconto stenografico via
+   `https://documenti.camera.it/apps/commonServices/getDocumento.ashx`.
 3. Dossier dei servizi studi (PDF dalla scheda dell'atto) — ancora indipendente
    e neutrale sul merito del provvedimento. **Non ancora in uso.**
 
@@ -81,8 +81,10 @@ altri progetti) e annotazione via Anthropic API.
 - `web/` — frontend statico (mockup generato con Claude Design, dati JSON
   statici, nessun build step). Deployato su Vercel come progetto separato
   `banchi` (root directory `./web`, collegato al repo GitHub per deploy
-  automatico ad ogni push su `main`, nessun dominio custom). Ancora
-  scollegato dalla pipeline dati reale in `src/banchi/`.
+  automatico ad ogni push su `main`, nessun dominio custom).
+- `scripts/` — script di collegamento pipeline → output statico (es.
+  `genera_dati_web.py`). Non `src/banchi/`: non è codice di libreria, è da
+  rieseguire a mano quando cambia l'input o il formato a valle.
 
 ## Stato del progetto
 
@@ -108,7 +110,24 @@ Design e deployato su Vercel (vedi sopra).
 `scripts/genera_dati_web.py` chiama la pipeline (`src/banchi/sources/atto.py`)
 per ogni atto di `web/data/catalogo_atti.json` e scrive
 `web/data/atto_<numero>_sviluppo.json`; il frontend fa fetch generico per
-numero atto, non più cablato su un solo caso. Restano comunque dati statici
-committati (nessun backend): da rigenerare a mano rieseguendo lo script
-quando il catalogo o `src/banchi/sources/` cambiano. Vedi
-[docs/decisioni.md](docs/decisioni.md), 2026-09-03.
+numero atto, non più cablato su un solo caso, con stato di
+caricamento/mancante per atto e conteggio "sviluppo disponibile per N atti
+su M" in home. Restano comunque dati statici committati (nessun backend): da
+rigenerare a mano rieseguendo lo script quando il catalogo o
+`src/banchi/sources/` cambiano. Vedi [docs/decisioni.md](docs/decisioni.md),
+2026-09-03.
+
+Bug di parsing corretto (2026-09-04): il campo `ruolo` in
+`resoconto_stenografico.py` prendeva il primo `<em>` di **tutto** il corpo
+dell'intervento invece che solo l'intestazione subito dopo `</a>`,
+scambiando enfasi tipografica nel discorso (forestierismi, "96-bis", note
+di regia come "Applausi") per il ruolo dell'oratore. Ora ancorato
+correttamente. Dati rigenerati per tutti gli atti. Vedi
+[docs/decisioni.md](docs/decisioni.md), 2026-09-04.
+
+**Nota nota e accettata, non un bug:** alcuni interventi compaiono due volte
+di fila nello sviluppo cronologico. Verificato che è il dato ufficiale
+stesso a duplicarli (due nodi `discussione` distinti nel grafo LOD puntano
+allo stesso turno) — si è deciso di lasciarli così invece di deduplicare
+arbitrariamente. Vedi [docs/decisioni.md](docs/decisioni.md), 2026-09-04, e
+[docs/fonti.md](docs/fonti.md).

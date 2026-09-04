@@ -69,6 +69,14 @@ Punti di attenzione, tutti verificati:
 - **Le triple sono duplicate.** Ogni entità porta il proprio `rdf:type` due
   volte e i nodi collegati si moltiplicano. Usare sempre `SELECT DISTINCT` e
   `COUNT(DISTINCT ?x)`: senza, i conteggi escono raddoppiati e plausibili.
+- **Anche con `DISTINCT`, uno stesso intervento può comparire due volte** —
+  ma stavolta genuinamente, non per il difetto sopra. Verificato su C. 1114:
+  due nodi `discussione` distinti (`?disc` diversi) puntano a due nodi
+  `intervento` distinti (`?interv` diversi) che condividono però la stessa
+  `dc:relation`, cioè lo stesso turno reale nel resoconto. Non è un errore di
+  query: è la Camera che modella lo stesso turno sotto due discussioni.
+  Decisione: si lascia così, non si deduplica — vedi
+  [decisioni.md](decisioni.md), 2026-09-04.
 - **Le entità con durata sono già storicizzate**: il nodo `ocd:aderisce` che
   lega deputato e gruppo porta `ocd:startDate`, `ocd:endDate` e
   `ocd:motivoTermine`. Vale anche per incarichi, uffici di presidenza e
@@ -97,8 +105,12 @@ mozioni, question time, discussioni generali senza `rif_attoCamera`.
 
 | | |
 |---|---|
-| Web service | `https://documenti.camera.it/apps/resoconto/elabora.asmx` |
-| Formati | XML / XHTML |
+| Endpoint usato | `https://documenti.camera.it/apps/commonServices/getDocumento.ashx`<br>parametri: `idlegislatura`, `sezione=assemblea`, `tipoDoc=stenografico`, `idSeduta`, `nomefile=stenografico` |
+| Formato | HTML (classi `intervento` / `interventoVirtuale`, vedi `resoconto_stenografico.py`) |
+
+`elabora.asmx` (web service SOAP, WSDL a parte) è stato valutato solo per la
+questione definitivo/provvisorio sotto — non è mai stato l'endpoint usato
+per scaricare il testo. Quello in produzione è `getDocumento.ashx`.
 
 ### Vincolo di processo
 
